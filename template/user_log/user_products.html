@@ -1,0 +1,207 @@
+﻿{% extends 'user_log/baseuser.html' %}
+
+{% block title %}Audio Bliss {% endblock %}
+{% load static %}
+{% block body %}
+
+
+{% load static %}
+
+
+
+ 
+<section class="mt-50 mb-50">
+    <div class="container">
+        <div class="row flex-row-reverse">
+            <div class="col-lg-9">
+                <form method="GET" action="{% url 'userlog:user_products' %}" class="mb-4">
+                    <div class="input-group">
+                        <input type="text" class="form-control" placeholder="Search products..." name="search" value="{{ search_query }}">
+                        <button class="btn btn-outline-secondary" type="submit">Search</button>
+                    </div>
+                </form>
+                <div class="shop-product-fillter">
+                    <div class="totall-product">
+                        <p> We found <strong class="text-brand">{{ products.count }}</strong> items for you!</p>
+                    </div>
+                    <div class="sort-by-product-area">
+                        <div class="sort-by-cover">
+                            <div class="sort-by-product-wrap">
+                                <div class="sort-by">
+                                    <span><i class="fi-rs-apps-sort"></i>Sort by:</span>
+                                </div>
+                                <div class="sort-by-dropdown-wrap">
+                                    <span> {{ sort_by|default:"Featured" }} <i class="fi-rs-angle-small-down"></i></span>
+                                </div>
+                            </div>
+                            <div class="sort-by-dropdown">
+                                <ul>
+                                    <li><a href="?{% if search_query %}search={{ search_query }}&{% endif %}{% if selected_category %}category={{ selected_category }}&{% endif %}sort_by=featured" {% if sort_by == 'featured' %}class="active"{% endif %}>Featured</a></li>
+                                    <li><a href="?{% if search_query %}search={{ search_query }}&{% endif %}{% if selected_category %}category={{ selected_category }}&{% endif %}sort_by=name_asc" {% if sort_by == 'name_asc' %}class="active"{% endif %}>A - Z</a></li>
+                                    <li><a href="?{% if search_query %}search={{ search_query }}&{% endif %}{% if selected_category %}category={{ selected_category }}&{% endif %}sort_by=name_desc" {% if sort_by == 'name_desc' %}class="active"{% endif %}>Z - A</a></li>
+                                    <li><a href="?{% if search_query %}search={{ search_query }}&{% endif %}{% if selected_category %}category={{ selected_category }}&{% endif %}sort_by=price_asc" {% if sort_by == 'price_asc' %}class="active"{% endif %}>Price: Low to High</a></li>
+                                    <li><a href="?{% if search_query %}search={{ search_query }}&{% endif %}{% if selected_category %}category={{ selected_category }}&{% endif %}sort_by=price_desc" {% if sort_by == 'price_desc' %}class="active"{% endif %}>Price: High to Low</a></li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="row product-grid-3">
+                    {% for product in products %}
+                    <div class="col-lg-4 col-md-4 col-12 col-sm-6">
+                        <div class="product-cart-wrap mb-30">
+                            <div class="product-img-action-wrap">
+                                <div class="product-img product-img-zoom">
+                                    <a href="{% url 'userlog:product_details' product.id  %}">
+                                        {% if product.variants.first.image1 %}
+                                            <img class="default-img" src="{{ product.variants.first.image1.url }}" alt="{{ product.title }}">
+                                        {% endif %}
+                                    </a>
+                                </div>
+                                <div class="product-action-1">
+                                    <a aria-label="Add To Wishlist" class="action-btn hover-up" href=""><i class="fi-rs-heart"></i></a>
+                                </div>
+                                <div class="product-badges product-badges-position product-badges-mrg">
+                                    <span class="hot">Hot</span>
+                                </div>
+                            </div>
+                            <div class="product-content-wrap">
+                                <div class="product-category">
+                                    <a href="">{{ product.category.name }}</a>
+                                </div>
+                                <h2><a href="{% url 'userlog:product_details' product.id %}">{{ product.title }}</a></h2>
+                                <div class="product-rate-cover">
+                                    <div class="product-rate d-inline-block">
+                                        <div class="product-rating" style="width:90%"></div>
+                                    </div>
+                                    <span class="font-small ml-5 text-muted"> (4.0)</span>
+                                </div>
+                                <div>
+                                    <span class="font-small text-muted">By <a href="">{{ product.brand_name }}</a></span>
+                                </div>
+                                <div class="product-card-bottom">
+                                    <div class="product-price">
+                                        {% if product.variants.exists %}
+                                            <span>&#8377;{{ product.variants.first.price }}</span>
+                                        {% else %}
+                                            <span>Price not available</span>
+                                        {% endif %}
+                                    </div>
+                                    <div class="product-action-1 show">
+                                        {% if product.variants.exists %}
+                                        <a aria-label="Add To Cart" class="action-btn hover-up add-to-cart" href="javascript:void(0);" data-product-variant-id="{{ product.variants.first.id }}">
+                                            <i class="fi-rs-shopping-bag-add"></i>
+                                        </a>
+                                        {% else %}
+                                        <span>No variant available</span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                <!--pagination-->
+                <div class="pagination-area mt-15 mb-sm-5 mb-lg-0">
+                    <nav aria-label="Page navigation example">
+                        <ul class="pagination justify-content-start">
+                            <li class="page-item active"><a class="page-link" href="#">01</a></li>
+                            <li class="page-item"><a class="page-link" href="#">02</a></li>
+                           
+                            <li class="page-item"><a class="page-link" href="#"><i class="fi-rs-angle-double-small-right"></i></a></li>
+                        </ul>
+                    </nav>
+                </div>
+            </div>
+            <div class="col-lg-3 primary-sidebar sticky-sidebar">
+                <div class="widget-category mb-30">
+                    <h5 class="section-title style-1 mb-30 wow fadeIn animated">Category</h5>
+                    <ul>
+                        <li><a href="{% url 'userlog:user_products' %}">All Categories</a></li>
+                        {% for category in categories %}
+                        <li><a href="?category={{ category.name }}{% if search_query %}&search={{ search_query }}{% endif %}{% if sort_by %}&sort_by={{ sort_by }}{% endif %}" {% if selected_category == category.name %}class="active"{% endif %}>{{ category.name }}</a></li>
+                        {% endfor %}
+                    </ul>
+                </div>
+               
+                  
+                <div class="sidebar-widget product-sidebar mb-30 p-30 bg-grey border-radius-10">
+                    <div class="widget-header position-relative mb-20 pb-10">
+                        <h5 class="widget-title mb-10">New products</h5>
+                        <div class="bt-1 border-color-1"></div>
+                    </div>
+                    {% for product in new_products|slice:":3" %}
+                    <div class="single-post clearfix">
+                        <div class="image">
+                            {% if product.variants.first.image1 %}
+                                <img src="{{ product.variants.first.image1.url }}" alt="{{ product.title }}">
+                            {% else %}
+                                <img src="{% static 'user/imgs/shop/thumbnail-default.jpg' %}" alt="Default Image">
+                            {% endif %}
+                        </div>
+                        <div class="content pt-10">
+                            <h5><a href="{% url 'userlog:product_details' product.id %}">{{ product.title }}</a></h5>
+                            <p class="price mb-0 mt-5">
+                                {% if product.variants.first %}
+                                    &#8377;{{ product.variants.first.price }}
+                                {% else %}
+                                    Price not available
+                                {% endif %}
+                            </p>
+                            <div class="product-rate">
+                                <div class="product-rating" style="width:90%"></div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+{% block extra_js %}
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+    $(document).ready(function() {
+        $('.add-to-cart').click(function(e) {
+            e.preventDefault();
+            var productVariantId = $(this).data('product-variant-id');
+    
+            // Check if productVariantId is valid
+            if (!productVariantId) {
+                alert('No variant selected');
+                return;
+            }
+    
+            $.ajax({
+                url: '{% url "cart:add_to_cart" %}',
+                type: 'POST',
+                data: {
+                    'product_variant_id': productVariantId,
+                    'quantity': 1,
+                    'csrfmiddlewaretoken': '{{ csrf_token }}'
+                },
+                dataType: 'json',
+                success: function(response) {
+                    if (response.success) {
+                        alert('Product added to cart successfully!');
+                        // Update cart total and item count in the UI
+                        $('#cart-total').text(response.cart_total);
+                        $('#cart-item-count').text(response.item_count);
+                    }
+                },
+                error: function(xhr, errmsg, err) {
+                    var errorMessage = xhr.responseJSON ? xhr.responseJSON.error : 'An error occurred';
+                    alert('Error: ' + errorMessage);
+                }
+            });
+        });
+    });
+    </script>
+    
+    
+{% endblock %}
+
+{% endblock %}

@@ -1,0 +1,25 @@
+{% extends 'user_log/baseuser.html' %}
+
+{% block title %}Audio Bliss - Success{% endblock %}
+
+{% block body %}
+{% load static %}
+
+
+<div class="container mb-25 mt-25">
+    <div class="row">
+        <div class="col-md-8 offset-md-2">
+            <div class="card">
+                <div class="card-body text-center">
+                    <div class="mb-3">
+                        <img src="{% static 'user/imgs/theme/success-tick.png' %}" alt="Success Tick" class="img-fluid" style="width: 100px; height: 100px;">
+                    </div>
+                    <h2 class="card-title">Order Placed Successfully!</h2>
+                    <p class="card-text">Thank you for your purchase. Your order has been received and is being processed.</p>
+                    <a href="{% url 'userlog:index' %}" class="btn btn-primary">Continue Shopping</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

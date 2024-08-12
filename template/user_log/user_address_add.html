@@ -1,0 +1,108 @@
+{% extends 'user_log/baseuser.html' %}
+
+{% block title %}Audio Bliss{% endblock %}
+{% load static %}
+{% block body %}
+
+{% load static %}
+
+
+
+
+
+<div class="row">
+    <!-- Add Address Form -->
+    <div class="col-lg-6">
+        <div class="card mb-3 mb-lg-0">
+            <div class="card-header">
+                <h5 class="mb-0">Add Address</h5>
+            </div>
+            <div class="card-body">
+                <form method="post" action="{% url 'userlog:user_profile' %}">
+                    {% csrf_token %}
+                    <div class="form-group">
+                        {{ address.form.house_name.label_tag }}
+                        {{ address.form.house_name }}
+                        {{ address.form.house_name.errors }}
+                    </div>
+                    <div class="form-group">
+                        {{ address.form.streat_name.label_tag }}
+                        {{ address.form.streat_name }}
+                        {{ address.form.streat_name.errors }}
+                    </div>
+                    <div class="form-group">
+                        {{ address.form.post_office.label_tag }}
+                        {{ address.form.post_office }}
+                        {{ address.form.post_office.errors }}
+                    </div>
+                    <div class="form-group">
+                        {{ address.form.place.label_tag }}
+                        {{ address.form.place }}
+                        {{ address.form.place.errors }}
+                    </div>
+                    <div class="form-group">
+                        {{ address.form.district.label_tag }}
+                        {{ address.form.district }}
+                        {{ address.form.district.errors }}
+                    </div>
+                    <div class="form-group">
+                        {{ address.form.state.label_tag }}
+                        {{ address.form.state }}
+                        {{ address.form.state.errors }}
+                    </div>
+                    <div class="form-group">
+                        {{ address.form.country.label_tag }}
+                        {{ address.form.country }}
+                        {{ address.form.country.errors }}
+                    </div>
+                    <div class="form-group">
+                        {{ address.form.pincode.label_tag }}
+                        {{ address.form.pincode }}
+                        {{ address.form.pincode.errors }}
+                    </div>
+                    <button type="submit" class="btn btn-primary">Save</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Addresses List -->
+    <div class="col-lg-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Addresses</h5>
+            </div>
+            <div class="card-body">
+                {% if addresses %}
+                    {% for address in addresses %}
+                        <div class="address-card mb-3 p-3 border rounded">
+                            <p class="mb-1"><strong>{{ address.house_name }}</strong></p>
+                            <p class="mb-1">{{ address.street_name }}</p>
+                            <p class="mb-1">{{ address.post_office }}</p>
+                            <p class="mb-1">{{ address.place }}, {{ address.district }}</p>
+                            <p class="mb-1">{{ address.state }}, {{ address.country }}</p>
+                            <p class="mb-3">PIN: {{ address.pincode }}</p>
+
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" type="radio" name="default_address" value="{{ address.id }}" id="address{{ address.id }}" {% if address.is_default %} checked {% endif %}>
+                                <label class="form-check-label" for="address{{ address.id }}">
+                                    Default Address
+                                </label>
+                            </div>
+                            
+                            <a href="{% url 'userlog:edit_address' address.id %}" class="btn btn-sm btn-secondary">Edit</a>
+                            <a href="{% url 'userlog:delete_address' address.id %}" class="btn btn-sm btn-danger">Delete</a>
+
+                            {% if address.is_default %}
+                                <strong class="text-success">Default Address</strong>
+                            {% endif %}
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <p>No addresses found.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

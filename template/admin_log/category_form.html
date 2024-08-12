@@ -1,0 +1,31 @@
+{% extends 'admin_log/base.html' %}
+
+{% block title %}Audio Bliss - Category Edit{% endblock %}
+
+{% block body %}
+{% load static %}
+<body>
+    <section class="content-main">
+        <div class="content-header">
+            <h2 class="content-title">Update Category</h2>
+        </div>
+        <form method="POST">
+            {% csrf_token %}
+            {{ form.as_p }}
+            <button class="btn btn-primary" type="submit">Save</button>
+        </form>
+        <!-- <a href="{% url 'product_det:categories' %}">Back to Categories</a> -->
+    </div>
+</body>
+
+{% endblock %}
+
+{% if messages %}
+<div class="messages">
+{% for message in messages %}
+<div class="alert {% if message.tags %}alert-{{ message.tags }}{% endif %}" role="alert">
+    {{ message }}
+</div>
+{% endfor %}
+</div>
+{% endif %}

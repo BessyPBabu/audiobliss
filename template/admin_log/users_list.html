@@ -1,0 +1,66 @@
+{% extends 'admin_log/base.html' %}
+
+{% block title %}Audio Bliss - User Management{% endblock %}
+
+{% block body %}
+<section class="content-main">
+    <div class="content-header">
+        <h2 class="content-title">Users List</h2>
+    </div>
+    <div class="card mb-4">
+        <header class="card-header">
+            <div class="row gx-3">
+                <div class="col-lg-4 col-md-6 me-auto">
+                    <form action="" method="get">
+                        <input type="text" name="query" placeholder="Search..." class="form-control">
+                </div>
+                <div class="col-lg-8 col-md-3 col-6">
+                    <button type="submit" class="btn btn-outline-primary">Search</button>
+                </div>
+            </div>
+        </header>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>User ID</th>
+                            <th>Name</th>
+                            <th>Email</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for user in users %}
+                        <tr>
+                            <td>{{ forloop.counter }}</td>
+                            <td>{{ user.username }}</td>
+                            <td>{{ user.email }}</td>
+                            <td>
+                                <form id="blockUserForm_{{ user.id }}" method="post" action="{% url 'adminlog:block_unblock_user' user.id %}" style="display: inline;">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-sm {% if not user.is_active %}btn-danger{% else %}btn-success{% endif %}">
+                                        {% if not user.is_active %}Unblock{% else %}Block{% endif %}
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                <div class="pagination-area mt-15 mb-50">
+                    <ul class="pagination justify-content-start">
+                        {% for i in users.paginator.page_range %}
+                            {% if users.number == i %}
+                                <li class="page-item active"><a class="page-link" href="#">{{ i }}</a></li>
+                            {% else %}
+                                <li class="page-item"><a class="page-link" href="?page={{ i }}">{{ i }}</a></li>
+                            {% endif %}
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

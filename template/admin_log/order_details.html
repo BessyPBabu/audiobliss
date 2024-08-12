@@ -1,0 +1,84 @@
+{% extends 'admin_log/base.html' %}
+
+{% block title %}Audio Bliss - Order Management {% endblock %}
+
+{% block body %}
+{% load static %}
+
+<section class="content-main">
+    <div class="content-header">
+        <h2 class="content-title">Order Details </h2>
+    </div>
+    <div class="card mb-4">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>#ID</th>
+                            <th scope="col">Name</th>
+                            <th scope="col">Email</th>
+                            <th scope="col">Total</th>
+                            <th scope="col">Status</th>
+                            <th scope="col">Date</th>
+                            <th scope="col" class="text-end">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for order in orders %}
+                        <tr>
+                            <td>{{ order.order_id }}</td>
+                            <td><b>{{ order.user.username }}</b></td>
+                            <td>{{ order.user.email }}</td>
+                            <td>${{ order.order_total }}</td>
+                            <td>
+                                <span class="badge rounded-pill 
+                                    {% if order.status == 'Confirmed' %}
+                                        bg-primary
+                                    {% elif order.status == 'Shipped' %}
+                                        bg-info
+                                    {% elif order.status == 'Delivered' %}
+                                        bg-success
+                                    {% elif order.status == 'Cancelled' %}
+                                        bg-danger
+                                    {% else %}
+                                        bg-secondary
+                                    {% endif %}
+                                ">{{ order.status }}</span>
+                            </td>
+                            <td>{{ order.created_at }}</td>
+                            <td class="text-end">
+                                <a href="{% url 'adminlog:order_details' order.id %}">View</a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    <div class="pagination-area mt-15 mb-50">
+        <nav aria-label="Page navigation example">
+            <ul class="pagination justify-content-start">
+                {% if orders.has_previous %}
+                    <li class="page-item"><a class="page-link" href="?page=1">First</a></li>
+                    <li class="page-item"><a class="page-link" href="?page={{ orders.previous_page_number }}">Previous</a></li>
+                {% endif %}
+
+                {% for i in orders.paginator.page_range %}
+                    {% if orders.number == i %}
+                        <li class="page-item active"><a class="page-link" href="#">{{ i }}</a></li>
+                    {% else %}
+                        <li class="page-item"><a class="page-link" href="?page={{ i }}">{{ i }}</a></li>
+                    {% endif %}
+                {% endfor %}
+
+                {% if orders.has_next %}
+                    <li class="page-item"><a class="page-link" href="?page={{ orders.next_page_number }}">Next</a></li>
+                    <li class="page-item"><a class="page-link" href="?page={{ orders.paginator.num_pages }}">Last</a></li>
+                {% endif %}
+            </ul>
+        </nav>
+    </div>
+</section>
+{% endblock %}

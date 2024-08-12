@@ -1,0 +1,167 @@
+{% extends 'user_log/baseuser.html' %}
+
+{% block title %}Audio Bliss - Cart Checkout{% endblock %}
+
+{% block body %}
+{% load static %}
+
+<style>
+    .main-heading {
+        background-color: #ffff66;
+    }
+    .messages {
+        list-style-type: none;
+        padding: 10px;
+        margin-bottom: 20px;
+        border-radius: 5px;
+    }
+    .messages .error {
+        background-color: #ffcccc;
+        border: 1px solid #ff0000;
+        color: #ff0000;
+    }
+    .address-card {
+        border: 1px solid #ddd;
+        padding: 10px;
+        margin-bottom: 10px;
+        border-radius: 5px;
+    }
+</style>
+
+<div class="page-header breadcrumb-wrap">
+    <div class="container">
+        <div class="breadcrumb">
+            <a href="{% url 'userlog:index' %}" rel="nofollow">Home</a>
+            <span><a href="#" rel="nofollow">Cart</a></span> 
+            <span>Cart Checkout</span>
+        </div>
+    </div>
+</div>
+
+<section class="mt-50 mb-50">
+    <div class="container">
+        {% if messages %}
+        <ul class="messages">
+            {% for message in messages %}
+            <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+            {% endfor %}
+        </ul>
+        {% endif %}
+
+        <div class="row">
+            <div class="col-md-8">
+                <div class="order_review">
+                    <div class="mb-20">
+                        <h4>Your Orders</h4>
+                    </div>
+                    <div class="table-responsive order_table text-center">
+                        <table class="table">
+                            <thead class="main-heading">
+                                <tr>
+                                    <th colspan="2">Product</th>
+                                    <th>Total</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in cart_items %}
+                                <tr>
+                                    <td class="image product-thumbnail">
+                                        <img src="{{ item.product_variant.image1.url }}" alt="{{ item.product_variant.product.title }}">
+                                    </td>
+                                    <td>
+                                        <h5><a href="{% url 'userlog:product_details' item.product_variant.product.id %}">{{ item.product_variant.product.title }}</a></h5>
+                                        <span class="product-qty">Color: {{ item.product_variant.color.name }}</span><br>
+                                        <span class="product-qty">x {{ item.quantity }}</span>
+                                    </td>
+                                    <td>&#8377;{{ item.subtotal }}</td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="3">No items in your cart.</td>
+                                </tr>
+                                {% endfor %}
+                                <tr>
+                                    <th>SubTotal</th>
+                                    <td class="product-subtotal" colspan="2">&#8377;{{ cart_total }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Shipping</th>
+                                    <td colspan="2"><em>Free Shipping</em></td>
+                                </tr>
+                                <tr>
+                                    <th>Total</th>
+                                    <td colspan="2" class="product-subtotal">
+                                        <span class="font-xl text-brand fw-900">&#8377;{{ cart_total }}</span>
+                                    </td>
+                                </tr>
+                            </tbody>
+                              
+                        </table>
+                    </div>
+                    <div class="bt-1 border-color-1 mt-30 mb-30"></div>
+                </div>
+                <div class="col-lg-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0">Addresses</h5>
+                        </div>
+                        <div class="card-body">
+                            {% if addresses %}
+                            <form method="post" action="{% url 'cart:cart_checkout' %}">
+                                {% csrf_token %}
+                                {% for address in addresses %}
+                                <div class="address-card">
+                                    <p>{{ address.house_name }}</p>
+                                    <p>{{ address.street_name }}</p>
+                                    <p>{{ address.post_office }}</p>
+                                    <p>{{ address.place }}, {{ address.district }}</p>
+                                    <p>{{ address.state }}, {{ address.country }}</p>
+                                    <p>PIN: {{ address.pincode }}</p>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="address" value="{{ address.id }}" 
+                                               id="address{{ address.id }}" 
+                                               {% if address.id == default_address.id %} checked {% endif %}>
+                                        <label class="form-check-label" for="address{{ address.id }}">
+                                            Use This Address
+                                        </label>
+                                    </div>
+                                    {% if address.is_default %}
+                                    <strong>Default Address</strong>
+                                    {% endif %}
+                                    </div>
+                                    {% endfor %}
+                            
+                                    <div class="mb-20">
+                                        <h5>Additional Information</h5>
+                                    </div>
+                                    <div class="form-group mb-30">
+                                        <textarea rows="5" name="order_note" placeholder="Order notes" class="form-control"></textarea>
+                                    </div>
+                                    <div class="payment_method">
+                                        <div class="mb-25">
+                                            <h5>Payment</h5>
+                                        </div>
+                                        <div class="payment_option">
+                                            <div class="custome-radio">
+                                                <input class="form-check-input" required="" type="radio" name="payment_option" id="cashondelivery" value="COD" checked="">
+                                                <label class="form-check-label" for="cashondelivery" data-bs-toggle="collapse" data-target="#cashondelivery_info" aria-controls="cashondelivery_info">Cash On Delivery</label>
+                                                <div class="form-group collapse in" id="cashondelivery_info">
+                                                    <p class="text-muted mt-5">Pay with cash On delivery.</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <button type="submit" class="btn btn-fill-out btn-block mt-30">Place Order</button>
+                                </form>
+                            {% else %}
+                            <p>No addresses found. <a href="{% url 'cart:order_address' %}">Add an address</a></p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+{% endblock %}

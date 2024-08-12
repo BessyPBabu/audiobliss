@@ -1,0 +1,164 @@
+{% load static %}
+<!DOCTYPE HTML>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>{% block title %}{% endblock %}
+    </title>
+    <meta http-equiv="x-ua-compatible" content="ie=edge">
+    <meta name="description" content="">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta property="og:title" content="">
+    <meta property="og:type" content="">
+    <meta property="og:url" content="">
+    <meta property="og:image" content="">
+    <!-- Favicon -->
+    <link rel="shortcut icon" type="image/x-icon" href="{% static 'admin/imgs/theme/favicon.ico' %}">
+    <!-- Template CSS -->
+    <link href="{% static 'admin/css/main.css' %}" rel="stylesheet" type="text/css" />
+</head>
+<body>
+    <div class="screen-overlay"></div>
+    <aside class="navbar-aside" id="offcanvas_aside">
+        <div class="aside-top">
+            <a href="index.html" class="brand-wrap">
+                <img src="{% static 'admin/imgs/theme/logo4.png' %}" class="logo" alt="Evara Dashboard">
+            </a>
+            <div>
+                <button class="btn btn-icon btn-aside-minimize"> <i class="text-muted material-icons md-menu_open"></i> </button>
+            </div>
+        </div>
+        <nav>
+            <ul class="menu-aside">
+                <li class="menu-item">
+                    <a class="menu-link" href="{% url 'adminlog:admin_dashboard' %}"> <i class="icon material-icons md-home"></i>
+                        <span class="text">Dashboard</span>
+                    </a>
+                </li>
+                <li class="menu-item has-submenu ">
+                    <a class="menu-link" href="{% url 'product_det:categories' %}"> <i class="icon material-icons md-shopping_bag"></i>
+                        <span class="text">Categories</span>
+                    </a>
+                    <div class="submenu">
+                        <a href="{% url 'product_det:categories' %}">Categories</a>
+                    </div>
+                </li>
+                <li class="menu-item has-submenu ">
+                    <a class="menu-link" href="{% url 'product_det:product_details' %}"> <i class="icon material-icons md-shopping_bag"></i>
+                        <span class="text">Products</span>
+                    </a>
+                    <div class="submenu ">
+                        <a href="{% url 'product_det:add_product' %}">Add products</a>
+                        <a href="{% url 'product_det:product_details' %}">Products Details</a>
+                        <a href="{% url 'product_det:add_variants' %}"> Add Variants</a>
+                        <a href="{% url 'product_det:variant_details' %}"> Variants Details</a>
+                    </div>
+                </li>
+                <li class="menu-item has-submenu">
+                    <a class="menu-link" href="#"> <i class="icon material-icons md-person"></i>
+                        <span class="text">Users Details</span>
+                    </a>
+                    <div class="submenu">
+                        <a href="{% url 'adminlog:users_list' %}">Users Details</a>
+                    </div>
+                </li>
+                <!-- <li class="menu-item has-submenu ">
+                    <a class="menu-link" href="#"> <i class="icon material-icons md-shopping_bag"></i>
+                        <span class="text">Stock Management</span>
+                    </a>
+                    <div class="submenu ">
+                        <a href="#">Add products</a>
+                        <a href="#">Products Details</a>
+                        <a href="#"> Color Varients</a>
+                    </div>
+                </li> -->
+                <li class="menu-item has-submenu ">
+                    <a class="menu-link" href="#"> <i class="icon material-icons md-shopping_cart"></i>
+                        <span class="text">Order Management</span>
+                    </a>
+                    <div class="submenu ">
+                        <a href="{% url 'adminlog:order_list' %}">Order Details</a>
+                        
+                    </div>
+                </li>
+            </ul>
+        </nav>
+    </aside>
+    <main class="main-wrap">
+        <header class="main-header navbar">
+            <div class="col-search">
+                <form class="searchform">
+                    <div class="input-group">
+                        <input list="search_terms" type="text" class="form-control" placeholder="Search term">
+                        <button class="btn btn-light bg" type="button"> <i class="material-icons md-search"></i></button>
+                    </div>
+                    <datalist id="search_terms">
+                        <option value="Products">
+                        <option value="Categories">
+                        <option value="Color varients">
+                        <option value="Users">
+                    </datalist>
+                </form>
+            </div>
+            <div class="col-nav">
+                <button class="btn btn-icon btn-mobile me-auto" data-trigger="#offcanvas_aside"> <i class="material-icons md-apps"></i> </button>
+                <ul class="nav">
+                    <li class="nav-item">
+                        <a class="nav-link btn-icon" href="#">
+                            <i class="material-icons md-notifications animation-shake"></i>
+                            <span class="badge rounded-pill">3</span>
+                        </a>
+                    </li>
+                    <li class="dropdown nav-item">
+                        <a href="{% url 'adminlog:admin_logout' %}" class ="btn ">Logout</a>
+                    </li>
+                </ul>
+            </div>
+        </header>
+        {% block body %}
+        {% if messages %}
+        <script>
+            // Clear messages after they've been displayed
+            document.addEventListener('DOMContentLoaded', (event) => {
+                setTimeout(() => {
+                    document.querySelectorAll('.alert').forEach((el) => {
+                        el.style.display = 'none';
+                    });
+                }, 5000);  // Messages will disappear after 5 seconds
+            });
+        </script>
+    {% endif %}
+
+         
+        {% endblock %}
+    
+
+        <footer class="main-footer font-xs">
+            <div class="row pb-30 pt-15">
+                <div class="col-sm-6">
+                    <script>
+                        document.write(new Date().getFullYear())
+                    </script> ©, Evara - HTML Ecommerce Template.
+                </div>
+                <div class="col-sm-6">
+                    <div class="text-sm-end">
+                        All rights reserved.
+                    </div>
+                </div>
+            </div>
+        </footer>
+    </main>
+    <script src="{% static 'admin/js/vendors/jquery-3.6.0.min.js' %}"></script>
+    <script src="{% static 'admin/js/vendors/bootstrap.bundle.min.js' %}"></script>
+    <script src="{% static 'admin/js/vendors/select2.min.js' %}"></script>
+    <script src="{% static 'admin/js/vendors/perfect-scrollbar.js' %}"></script>
+    <script src="{% static 'admin/js/vendors/jquery.fullscreen.min.js' %}"></script>
+    <!-- Main Script -->
+    <script src="{% static 'admin/js/main.js' %}" type="text/javascript"></script>
+
+    <!-- Include Cropper.js CSS and JS -->
+<link  href="https://unpkg.com/cropperjs/dist/cropper.css" rel="stylesheet"/>
+<script src="https://unpkg.com/cropperjs/dist/cropper.js"></script>
+
+</body>
+</html>

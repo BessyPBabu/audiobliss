@@ -1,0 +1,19 @@
+{% extends 'admin_log/base.html' %}
+
+{% block title %}Audio Bliss - Category Delete{% endblock %}
+
+{% block body %}
+<body>
+    <section class="content-main">
+        <div class="content-header">
+            <h2 class="content-title">Delete Category</h2>
+        </div>
+        <p>Are you sure you want to delete "{{ category.name }}"?</p>
+        <form method="POST">
+            {% csrf_token %}
+            <button class="btn btn-danger" type="submit">Delete</button>
+            <a class="btn btn-primary" href="{% url 'product_det:categories' %}">Cancel</a>
+        </form>
+    </section>
+</body>
+{% endblock %}

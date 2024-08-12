@@ -1,0 +1,26 @@
+{% extends 'admin_log/base.html' %}
+
+{% block title %}Audio Bliss - Delete Product Variant{% endblock %}
+
+{% block body %}
+<section class="content-main">
+    <div class="container">
+        <div class="content-header">
+            <h2 class="content-title">Delete Variant</h2>
+        </div>
+        <div class="card">
+            <div class="card-body">
+                <h3>Are you sure you want to delete this variant?</h3>
+                <p>Product: {{ variant.product.title }}</p>
+                <p>Color: {{ variant.color.name }}</p>
+                <p>Price: ₹{{ variant.price }}</p>
+                <form method="post">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger">Confirm Delete</button>
+                    <a href="{% url 'product_det:variant_details' %}" class="btn btn-secondary">Cancel</a>
+                </form>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

@@ -1,0 +1,17 @@
+{% extends 'user_log/baseuser.html' %}
+
+{% block title %}Confirm Deletion{% endblock %}
+
+{% block body %}
+<section class="mt-50 mb-50">
+    <div class="container">
+        <h4>Are you sure you want to delete this address?</h4>
+        <p>{{ address.house_name }}, {{ address.street_name }}, {{ address.place }}, {{ address.district }}, {{ address.state }}, {{ address.country }} - {{ address.pincode }}</p>
+        <form method="post" action="{% url 'delete_order_address' address.id %}">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-danger">Yes, Delete</button>
+            <a href="{% url 'order_address' %}" class="btn btn-secondary">Cancel</a>
+        </form>
+    </div>
+</section>
+{% endblock %}

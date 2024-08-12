@@ -1,0 +1,188 @@
+{% extends 'user_log/baseuser.html' %}
+
+{% block title %}Audio Bliss - Cart{% endblock %}
+
+{% block body %}
+{% load static %}
+{% block extra_styles %}
+<!-- <style>
+    .detail-qty {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.detail-qty .qty-down,
+.detail-qty .qty-up {
+    padding: 5px;
+    background-color: #f0f0f0;
+    border-radius: 5px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.detail-qty .qty-val {
+    text-align: center;
+    width: 40px;
+    margin: 0 5px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+}
+
+</style> -->
+{% endblock %}
+<main class="main">
+    <div class="page-header breadcrumb-wrap">
+        <div class="container">
+            <div class="breadcrumb">
+                <a href="{% url 'userlog:index' %}" rel="nofollow">Home</a>
+                <span></span> Cart
+            </div>
+        </div>
+    </div>
+    <section class="mt-50 mb-50">
+        <div class="container">
+            <div class="row">
+                <div class="col-12">
+                    {% if cart_items %}
+                    <div class="table-responsive">
+                        <table class="table shopping-summery text-center clean">
+                            <thead>
+                                <tr class="main-heading">
+                                    <th scope="col">Image</th>
+                                    <th scope="col">Name</th>
+                                    <th scope="col">Price</th>
+                                    <th scope="col">Quantity</th>
+                                    <th scope="col">Subtotal</th>
+                                    <th scope="col">Remove</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in cart_items %}
+                                <tr>
+                                    <td class="image product-thumbnail"><img src="{{ item.product_variant.image1.url }}" alt="{{ item.product_variant.product.title }}"></td>
+                                    <td class="product-des product-name">
+                                        <h5 class="product-name"><a href="">{{ item.product_variant.product.title }}</a></h5>
+                                        <p class="font-xs">{{ item.product_variant.color.name }}</p>
+                                    </td>
+                                    <td class="price" data-title="Price"><span>&#8377;{{ item.product_variant.price|floatformat:2 }}</span></td>
+                                    <td class="text-center" data-title="Stock">
+                                        <form action="{% url 'cart:update_cart' item.id %}" method="post" class="cart-update-form">
+                                            {% csrf_token %}
+                                            <div class="detail-qty border radius">
+                                                <input type="number" name="quantity" class="qty-val" value="{{ item.quantity }}" min="1" max="{{ item.product_variant.max_quantity_per_user }}" style="width: 60px;">
+                                            </div>
+                                        </form>
+                                    </td>
+                                    
+                                    <td class="text-right" data-title="Cart">
+                                        <span class="item-subtotal">&#8377;{{ item.subtotal|floatformat:2 }}</span>
+                                    </td>
+                                    <td class="action" data-title="Remove">
+                                        <a href="{% url 'cart:remove_from_cart' item.id %}" class="text-muted"><i class="fi-rs-trash"></i></a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                                <tr>
+                                    <td colspan="6" class="text-end">
+                                        <form action="{% url 'cart:clear_cart' %}" method="post" style="display: inline;">
+                                            {% csrf_token %}
+                                            <button type="submit" class="text-muted btn btn-link"><i class="fi-rs-cross-small"></i> Clear Cart</button>
+                                        </form>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="cart-action text-end">
+                        <a href="{% url 'userlog:user_products' %}" class="btn"><i class="fi-rs-shopping-bag mr-10"></i>Continue Shopping</a>
+                    </div>
+                    <div class="divider center_icon mt-50 mb-50"><i class="fi-rs-fingerprint"></i></div>
+                    <div class="col-lg-6 col-md-12">
+                        <div class="border p-md-4 p-30 border-radius cart-totals">
+                            <div class="heading_s1 mb-3">
+                                <h4>Cart Totals</h4>
+                            </div>
+                            <div class="table-responsive">
+                                <table class="table">
+                                    <tbody>
+                                        <tr>
+                                            <td class="cart_total_label">Cart Subtotal</td>
+                                            <td class="cart_total_amount"><span class="font-lg fw-900 text-brand">&#8377;{{ total|floatformat:2 }}</span></td>
+                                        </tr>
+                                        <tr>
+                                            <td class="cart_total_label">Shipping</td>
+                                            <td class="cart_total_amount"> <i class="ti-gift mr-5"></i> Free Shipping</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="cart_total_label">Total</td>
+                                            <td class="cart_total_amount"><strong><span class="font-xl fw-900 text-brand">&#8377;{{ total|floatformat:2 }}</span></strong></td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                            <a href="{% url 'cart:cart_checkout' %}" class="btn"> <i class="fi-rs-box-alt mr-10"></i> Proceed To CheckOut</a>
+                        </div>
+                    </div>
+                    {% else %}
+                    <p>Your cart is empty. <a href="{% url 'userlog:user_products' %}">Continue shopping</a>.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </section>
+</main>
+
+<script>
+    $(document).ready(function() {
+    $('.qty-val').on('change', function() {
+        var $form = $(this).closest('form');
+        updateCart($form);
+    });
+
+    function updateCart($form) {
+        $.ajax({
+            url: $form.attr('action'),
+            type: 'POST',
+            data: $form.serialize(),
+            success: function(response) {
+                if (response.success) {
+                    var $row = $form.closest('tr');
+                    $row.find('.item-subtotal').text('₹' + response.item_subtotal.toFixed(2));
+                    
+                    // Update cart total
+                    $('.cart_total_amount .font-xl').text('₹' + response.cart_total.toFixed(2));
+                    $('.cart_total_amount .font-lg').text('₹' + response.cart_total.toFixed(2));
+                    
+                    // Update cart subtotal
+                    $('.cart_total_amount .cart-subtotal').text('₹' + response.cart_total.toFixed(2));
+                    
+                    // Update cart count if you have this element
+                    $('.cart-count').text(response.cart_count);
+
+                    // If the item was removed (quantity set to 0), remove the row
+                    if (response.item_subtotal === 0) {
+                        $row.remove();
+                    }
+
+                    // Check if cart is empty and show a message if it is
+                    if (response.cart_count === 0) {
+                        $('.shopping-summery').html('<p>Your cart is empty. <a href="/products/">Continue shopping</a>.</p>');
+                    }
+                } else {
+                    alert(response.error);
+                }
+            },
+            error: function(xhr) {
+                if (xhr.responseJSON && xhr.responseJSON.error) {
+                    alert(xhr.responseJSON.error);
+                } else {
+                    alert('There was an error updating the cart. Please try again.');
+                }
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

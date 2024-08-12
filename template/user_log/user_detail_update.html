@@ -1,0 +1,27 @@
+{% extends 'user_log/baseuser.html' %}
+
+{% block title %}Audio Bliss {% endblock %}
+{% load static %}
+{% block body %}
+
+
+{% load static %}
+<div class="row">
+  <div class="col-lg-6"class= "pt-50 pb-50">
+    <div class="card">
+  
+      <div class="card-header">
+        Edit Account Details
+      </div>
+      <div class="card-body">
+        <form method="post" enctype="multipart/form-data">
+          {% csrf_token %}
+          {{ form.as_p }}
+          <button type="submit" class="btn btn-primary">Save</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+
+{% endblock %}

@@ -1,0 +1,88 @@
+{% extends 'user_log/baseuser.html' %}
+
+{% block title %}Audio Bliss{% endblock %}
+{% load static %}
+{% block body %}
+
+
+{% load static %}
+
+<div class="container mt-5">
+    <h5 class="mb-4">Order Details: {{ order.order_id }}</h5>
+
+    <div class="row">
+        <!-- Order Information Card -->
+        <div class="col-md-6 mb-4">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5>Order Information</h5>
+                </div>
+                <div class="card-body">
+                    <p><strong>Order ID:</strong> {{ order.order_id }}</p>
+                    <p><strong>Order Total:</strong> ₹{{ order.order_total }}</p>
+                    <p><strong>Status:</strong> {{ order.get_status_display }}</p>
+                    <p><strong>Order Date:</strong> {{ order.created_at|date:"d M Y, H:i" }}</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Shipping Address Card -->
+        <div class="col-md-6 mb-4">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5>Shipping Address</h5>
+                </div>
+                <div class="card-body">
+                    <!-- <p><strong>Name:</strong> {{ order.address.user }}</p> -->
+                    <p><strong>House Name:</strong> {{ order.address.house_name }}</p>
+                    <p><strong>Street:</strong> {{ order.address.streat_name }}</p>
+                    <p><strong>City:</strong> {{ order.address.place }}</p>
+                    <p><strong>District:</strong> {{ order.address.district }}</p>
+                    <p><strong>State:</strong> {{ order.address.state }}</p>
+                    <p><strong>Pincode:</strong> {{ order.address.pincode }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Order Items Card -->
+    <div class="card mb-4">
+        <div class="card-header bg-primary text-white">
+            <h5>Order Items</h5>
+        </div>
+        <div class="card-body">
+            <ul class="list-group">
+                {% for item in order_items %}
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <div>
+                            <strong>{{ item.product_variant.product.title }}</strong> - 
+                            {{ item.product_variant.color.name }} 
+                            ({{ item.quantity }} units)
+                        </div>
+                        <div>
+                            ₹{{ item.product_price }} each
+                        </div>
+                    </li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="text-right">
+        <a href="{% url 'userlog:user_orders' %}" class="btn btn-secondary">Back to Orders</a>
+        {% if order.status == 'New' %}
+            <form action="{% url 'userlog:cancel_order' order.id %}" method="post" style="display:inline;">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-danger">Cancel Order</button>
+            </form>
+        {% elif order.status == 'Delivered' %}
+            <form action="{% url 'userlog:return_order' order.id %}" method="post" style="display:inline;">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-warning">Return Order</button>
+            </form>
+        {% endif %}
+    </div>
+
+</div>
+{% endblock %}

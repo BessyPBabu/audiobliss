@@ -1,0 +1,73 @@
+{% extends 'admin_log/base.html' %}
+
+{% block title %}Audio Bliss - Order Management{% endblock %}
+
+{% block body %}
+{% load static %}
+
+<div class="container">
+    <h5>Order Details: {{ order.order_id }}</h5>
+
+    <!-- Order Information Form -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h3>Order Information</h3>
+        </div>
+        <div class="card-body">
+            <form method="post">
+                {% csrf_token %}
+                {{ order_form.as_p }}
+                <button type="submit" name="update_order" id="update-order-btn" class="btn btn-primary">Update Order</button>
+            </form>
+            {% if messages %}
+                <div id="order-messages">
+                    {% for message in messages %}
+                        <div class="alert {% if message.tags %}alert-{{ message.tags }}{% endif %}" role="alert" data-order-msg="{{ forloop.counter }}">
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Payment Form -->
+    <!-- <div class="card mb-4">
+        <div class="card-header">
+            <h3>Payment Information</h3>
+        </div>
+        <div class="card-body">
+            <form method="post">
+                {% csrf_token %}
+                {{ payment_form.as_p }}
+                <button type="submit" name="update_payment" id="update-payment-btn" class="btn btn-primary">Update Payment</button>
+            </form>
+            {% if messages %}
+                <div id="payment-messages">
+                    {% for message in messages %}
+                        <div class="alert {% if message.tags %}alert-{{ message.tags }}{% endif %}" role="alert" data-payment-msg="{{ forloop.counter }}">
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        </div> -->
+    </div>
+
+    <!-- Order Items -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h3>Order Items</h3>
+        </div>
+        <div class="card-body">
+            <ul class="list-group">
+                {% for item in order_items %}
+                    <li class="list-group-item" id="order-item-{{ forloop.counter }}">
+                        <p>Product: {{ item.product_variant.product.title }} - Color: {{ item.product_variant.color.name }} - Quantity: {{ item.quantity }} units at Price: {{ item.product_price }} each</p>
+                    </li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+</div>
+{% endblock %}

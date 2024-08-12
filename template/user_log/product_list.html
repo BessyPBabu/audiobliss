@@ -1,0 +1,48 @@
+{% extends 'user_log/baseuser.html' %}
+
+{% block title %}Audio Bliss {% endblock %}
+{% load static %}
+
+{% block body %}
+<div class="row product-grid-3" id="product-list">
+    {% for product in products %}
+    <div class="col-lg-4 col-md-4 col-12 col-sm-6">
+        <div class="product-cart-wrap mb-30">
+            <div class="product-img-action-wrap">
+                <div class="product-img product-img-zoom">
+                    <a href="{% url 'userlog:product_details' product.id  %}">
+                        <img class="default-img" src="{{ product.image1.url }}" alt="{{ product.title }}">
+                    </a>
+                </div>
+                <div class="product-action-1">
+                    <a aria-label="Add To Wishlist" class="action-btn hover-up" href="#"><i class="fi-rs-heart"></i></a>
+                </div>
+                <div class="product-badges product-badges-position product-badges-mrg">
+                    <span class="{{ product.badge|default:'hot' }}">{{ product.badge|default:"Hot" }}</span>
+                </div>
+            </div>
+            <div class="product-content-wrap">
+                <div class="product-category">
+                    <a href="#">{{ product.category.name }}</a>
+                </div>
+                <h2><a href="{% url 'userlog:product_details' product.id %}">{{ product.title }}</a></h2>
+                <div class="rating-result" title="{{ product.rating_percentage }}%">
+                    <span>
+                        <span>{{ product.rating_percentage }}%</span>
+                    </span>
+                </div>
+                <div class="product-price">
+                    <span>&#8377;{{ product.pricing }}</span>
+                    {% if product.old_price %}
+                    <span class="old-price">&#8377;{{ product.old_price }}</span>
+                    {% endif %}
+                </div>
+                <div class="product-action-1 show">
+                    <a aria-label="Add To Cart" class="action-btn hover-up add-to-cart-btn" href="#" data-product-id="{{ product.id }}"><i class="fi-rs-shopping-bag-add"></i></a>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}

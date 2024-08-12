@@ -1,0 +1,30 @@
+{% extends 'admin_log/base.html' %}
+
+{% block title %}Audio Bliss - Edit Product Variant{% endblock %}
+
+{% block extra_css %}
+{% endblock %}
+
+{% block body %}
+<section class="content-main">
+    <div class="container">
+        {% if messages %}
+            {% for message in messages %}
+                {% if message.extra_tags == 'variant' %}
+                    <div class="alert alert-success">{{ message }}</div>
+                {% endif %}
+            {% endfor %}
+        {% endif %}
+        <div class="card">
+            <div class="card-body">
+                <h3>Edit Variant</h3>
+                <form method="post" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    {{ variant_form.as_p }}
+                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

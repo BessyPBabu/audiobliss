@@ -1,0 +1,43 @@
+{% extends 'user_log/base.html' %}
+
+{% block title %}Audio Bliss - OTP verification{% endblock %}
+
+{% block body %}
+{% load static %}
+
+<section class="pt-50 pb-50">
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-10 m-auto">
+                <div class="row">
+                    <div class="col-lg-5">
+                        <div class="login_wrap widget-taber-content p-30 background-white border-radius-10 mb-md-5 mb-lg-0 mb-sm-5">
+                            <div class="padding_eight_all bg-white">
+                                <div class="heading_s1">
+                                    <h3 class="mb-30">Verify OTP</h3>
+                                </div>
+                                {% if message %}
+                                <div class="alert alert-info">{{ message }}</div>
+                                 {% endif %}
+                                <form method="post" action="">
+                                {% csrf_token %}
+                                {{ form.as_p }}
+                                    <button type="submit" name="verify">Verify</button>
+                                </form>
+                                <form method="post" action="">
+                                {% csrf_token %}
+                                    <button type="submit" name="resend">Resend OTP</button>
+                                </form>
+                                <div class="text-muted text-center mt-15">Didn't receive an OTP? Click the button above to resend.</div>
+                           
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+
+{% endblock %}

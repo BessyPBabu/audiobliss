@@ -1,0 +1,50 @@
+{% extends 'user_log/baseuser.html' %}
+
+{% block title %}Audio Bliss{% endblock %}
+{% load static %}
+{% block body %}
+
+
+{% load static %}
+
+<div class="container mt-5">
+    <h2>My Orders</h2>
+    <div class="table-responsive">
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Order ID</th>
+                    <th>Date</th>
+                    <th>Total</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for order in orders %}
+                    <tr>
+                        <td>{{ order.order_id }}</td>
+                        <td>{{ order.created_at|date:"d M Y" }}</td>
+                        <td>{{ order.order_total }}</td>
+                        <td>{{ order.get_status_display }}</td>
+                        <td>
+                            <a href="{% url 'userlog:order_details' order.id %}" class="btn btn-info btn-sm">View</a>
+                            {% if order.status == 'New' %}
+                                <form action="{% url 'userlog:cancel_order' order.id %}" method="post" style="display:inline;">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-danger btn-sm">Cancel</button>
+                                </form>
+                            {% elif order.status == 'Delivered' %}
+                                <form action="{% url 'userlog:return_order' order.id %}" method="post" style="display:inline;">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-warning btn-sm">Return</button>
+                                </form>
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
