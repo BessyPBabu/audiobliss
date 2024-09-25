@@ -24,8 +24,9 @@ urlpatterns = [
 
     path('user_profile/',views.user_profile,name = 'user_profile'),
     path('profile/edit/', views.edit_user_profile, name='edit_user_profile'),
+    path('update_email/',views.update_email,name = 'update_email'),
+    path('verify_otp_email_update/',views.verify_otp_email_update,name = 'verify_otp_email_update'),
 
-    path('user_address_add', views.user_address_add, name='user_address_add'),
     path('address/edit/<int:address_id>/', views.edit_address, name='edit_address'),
     path('address/delete/<int:address_id>/', views.delete_address, name='delete_address'),
 
@@ -38,7 +39,10 @@ urlpatterns = [
     path('reset_password/', views.reset_password_request, name='reset_password_request'),
     path('reset_password/verify_otp/', views.reset_password_verify_otp, name='reset_password_verify_otp'),
     path('reset_password/set_new/', views.reset_password_set_new, name='reset_password_set_new'),
+
+
+    path('wallet/', views.wallet, name='wallet'),
+    path('contact/', views.contact, name='contact'),
     
 ]
-   
-
+ 

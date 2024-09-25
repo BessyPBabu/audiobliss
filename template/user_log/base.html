@@ -4,7 +4,7 @@
 
 <head>
     <meta charset="utf-8">
-    <title>{% block title %}Audio Bliss  {% endblock %}</title>
+    <title>{% block title %}Audio Bliss {% endblock %}</title>
     <meta http-equiv="x-ua-compatible" content="ie=edge">
     <meta name="description" content="">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -13,7 +13,7 @@
     <meta property="og:url" content="">
     <meta property="og:image" content="">
     <!-- Favicon -->
-    <link rel="shortcut icon" type="image/x-icon" href="{% static 'user/imgs/theme/favicon.svg' %}">
+    <link rel="shortcut icon" type="image/x-icon" href="{% static 'user/imgs/theme/favicon.ico' %}">
     <!-- Template CSS -->
     <link rel="stylesheet" href="{% static 'user/css/main.css' %}">
    
@@ -149,7 +149,7 @@
             <div class="container">
                 <div class="header-wrap">
                     <div class="logo logo-width-1">
-                        <a href="index.html"><img src="{% static 'user/imgs/theme/logo4.png' %}" alt="logo"></a>
+                        <a href="{% url 'userlog:index' %}"><img src="{% static 'user/imgs/theme/logo4.png' %}" alt="logo"></a>
                     </div>
                     <div class="header-right">
                         <div class="main-menu main-menu-padding-1 main-menu-lh-2 d-none d-lg-block">
@@ -158,8 +158,8 @@
                                     <li><a href="{% url 'userlog:index' %}">Home</a> </li>
                                     <li><a href="{% url 'userlog:user_products' %}">All Products </a></li>
                                     <li><a href="{% url 'userlog:about' %}">About Us</a></li>
-                                    <li><a href="#">Contact</a></li>
-                                    <li><a href="#">Wallet</a></li>
+                                    <li><a href="{% url 'userlog:contact' %}">Contact</a></li>
+                                    <li><a href="{% url 'userlog:wallet' %}">Wallet</a></li>
                                 </ul>
                             </nav>
                         </div>
@@ -167,28 +167,42 @@
                         {% block content %}
                         <div class="header-action-right">
                             <div class="header-action-2">
-                                <i class="fi-rs-user"></i><a href="{% url 'userlog:user_signup' %}">Sign Up</a>
+                                <i class="fi-rs-user"></i><a href="{% url 'userlog:user_profile' %}">
+                                    {% if user.is_authenticated %}
+                                        <h5>Welcome,{{ user.username }}...!</h5>
+                                    {% else %}
+                                        <h5>Login</h5>
+                                    {% endif %}
+                                </a>
                                 <div class="header-action-icon-2">
-                                    <a href="{% url 'userlog:user_signup' %}">
+                                    <a href="{% url 'cart:view_wishlist' %}">
                                         <img class="svgInject" alt="Evara" src="{% static 'user/imgs/theme/icons/icon-heart.svg' %}">
-                                       
+                                        <!-- {% if user.is_authenticated %}
+                                        <span class="pro-count blue">0</span>
+                                        {% endif %} -->
                                     </a>
                                 </div>
                                 <div class="header-action-icon-2">
-                                    <a class="mini-cart-icon" href="{% url 'userlog:user_signup' %}">
+                                    <a class="mini-cart-icon" href="{% url 'cart:view_cart' %}">
                                         <img alt="Evara" src="{% static 'user/imgs/theme/icons/icon-cart.svg' %}">
+                                        <!-- {% if user.is_authenticated %}
+                                        <span class="pro-count blue">0</span>
+                                        {% endif %} -->
                                     </a>
-                                    <div class="cart-dropdown-wrap cart-dropdown-hm2">
-                                        <!-- <ul>
+                                    <!-- <div class="cart-dropdown-wrap cart-dropdown-hm2">
+                                        <ul>
                                             <li>
                                                 <div class="shopping-cart-img">
                                                     <a href="shop-product-right.html"><img alt="Evara" src="{% static 'user/imgs/shop/thumbnail-3.jpg' %}"></a>
                                                 </div>
                                             </li>
-                                        </ul> -->
+                                        </ul> 
                                            
-                                    </div>
+                                    </div> -->
                                 </div>
+                                {% if user.is_authenticated %}
+                                <a href="{% url 'userlog:user_logout' %}" class="btn">Logout</a>
+                                {% endif %}
                             </div>
                         </div>{% endblock %}
                     </div>

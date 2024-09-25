@@ -1,0 +1,25 @@
+{% extends 'admin_log/base.html' %}
+{% block title %}Edit Brand{% endblock %}
+{% block body %}
+<section class="content-main">
+    <div class="content-header">
+        <h2 class="content-title">Edit Brand</h2>
+        <div>
+            <a href="{% url 'product_det:product_details' %}" class="btn btn-light btn-sm">Back to Brand List</a>
+        </div>
+    </div>
+    
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="POST">
+                {% csrf_token %}
+                {{ form.as_p }} <!-- Render the form fields automatically -->
+
+                <button type="submit" class="btn btn-primary">Update Brand</button>
+            </form>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+

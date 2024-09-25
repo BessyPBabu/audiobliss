@@ -1,0 +1,24 @@
+{% extends 'admin_log/base.html' %}
+{% block title %}Delete Brand{% endblock %}
+{% block body %}
+<section class="content-main">
+    <div class="content-header">
+        <h2 class="content-title">Delete Brand</h2>
+        <div>
+            <a href="{% url 'product_det:product_details' %}" class="btn btn-light btn-sm">Back to Brand List</a>
+        </div>
+    </div>
+    
+    <div class="card mb-4">
+        <div class="card-body">
+            <p>Are you sure you want to delete the brand <strong>{{ brand.name }}</strong>?</p>
+            
+            <form method="POST" action="{% url 'product_det:brand_delete' brand.id %}">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-danger">Delete Brand</button>
+                <a href="{% url 'product_det:product_details' %}" class="btn btn-secondary">Cancel</a>
+            </form>
+        </div>
+    </div>
+</section>
+{% endblock %}

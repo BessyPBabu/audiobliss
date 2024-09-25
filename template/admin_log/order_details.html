@@ -20,6 +20,7 @@
                             <th scope="col">Email</th>
                             <th scope="col">Total</th>
                             <th scope="col">Status</th>
+                            <th scope="col">Payment Method</th>
                             <th scope="col">Date</th>
                             <th scope="col" class="text-end">Action</th>
                         </tr>
@@ -30,7 +31,7 @@
                             <td>{{ order.order_id }}</td>
                             <td><b>{{ order.user.username }}</b></td>
                             <td>{{ order.user.email }}</td>
-                            <td>${{ order.order_total }}</td>
+                            <td>₹{{ order.order_total }}</td>
                             <td>
                                 <span class="badge rounded-pill 
                                     {% if order.status == 'Confirmed' %}
@@ -45,6 +46,17 @@
                                         bg-secondary
                                     {% endif %}
                                 ">{{ order.status }}</span>
+                            </td>
+                            <td>
+                                {% if order.payment.payment_method == 'Razorpay' %}
+                                  Razorpay
+                                {% elif order.payment.payment_method == 'COD' %}
+                                  COD
+                                {% elif order.payment.payment_method == 'Wallet' %}
+                                Wallet
+                                {% else %}
+                                Others
+                                {% endif %}
                             </td>
                             <td>{{ order.created_at }}</td>
                             <td class="text-end">

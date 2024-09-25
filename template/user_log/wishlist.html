@@ -1,89 +1,173 @@
 {% extends 'user_log/baseuser.html' %}
 
-{% block title %}Audio Bliss - cart{% endblock %}
+{% block title %}Audio Bliss - Wishlist{% endblock %}
 
 {% block body %}
 {% load static %}
 
-
-
 <div class="page-header breadcrumb-wrap">
     <div class="container">
         <div class="breadcrumb">
-                <a href="index.html" rel="nofollow">Home</a>
-                <span></span> Wishlist
-            </div>
+            <a href="{% url 'userlog:index' %}" rel="nofollow">Home</a>
+            <span></span> Wishlist
         </div>
+    </div>
 </div>
+
 <section class="mt-50 mb-50">
-        <div class="container">
-            <div class="row">
-                <div class="col-12">
-                    <div class="table-responsive">
-                        <table class="table shopping-summery text-center">
-                            <thead>
-                                <tr class="main-heading">
-                                    <th scope="col" colspan="2">Product</th>
-                                    <th scope="col">Price</th>
-                                    <th scope="col">Stock Status</th>
-                                    <th scope="col">Action</th>
-                                    <th scope="col">Remove</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr>
-                                    <td class="image product-thumbnail"><img src="assets/imgs/shop/product-1-1.jpg" alt="#"></td>
-                                    <td class="product-des product-name">
-                                        <h5 class="product-name"><a href="shop-product-right.html">J.Crew Mercantile Women's Short-Sleeve</a></h5>
-                                        <p class="font-xs">Maboriosam in a tonto nesciung eget<br> distingy magndapibus.
-                                        </p>
-                                    </td>
-                                    <td class="price" data-title="Price"><span>$65.00 </span></td>
-                                    <td class="text-center" data-title="Stock">
-                                        <span class="color3 font-weight-bold">In Stock</span>
-                                    </td>
-                                    <td class="text-right" data-title="Cart">
-                                        <button class="btn btn-sm"><i class="fi-rs-shopping-bag mr-5"></i>Add to cart</button>
-                                    </td>
-                                    <td class="action" data-title="Remove"><a href="#"><i class="fi-rs-trash"></i></a></td>
-                                </tr>
-                                <tr>
-                                    <td class="image"><img src="assets/imgs/shop/product-2-1.jpg" alt="#"></td>
-                                    <td class="product-des">
-                                        <h5 class="product-name"><a href="shop-product-right.html">Amazon Essentials Women's Tank</a></h5>
-                                        <p class="font-xs">Sit at ipsum amet clita no est,<br> sed amet sadipscing et gubergren</p>
-                                    </td>
-                                    <td class="price" data-title="Price"><span>$75.00 </span></td>
-                                    <td class="text-center" data-title="Stock">
-                                        <span class="color3 font-weight-bold">In Stock</span>
-                                    </td>
-                                    <td class="text-right" data-title="Cart">
-                                        <button class="btn btn-sm"><i class="fi-rs-shopping-bag mr-5"></i>Add to cart</button>
-                                    </td>
-                                    <td class="action" data-title="Remove"><a href="#"><i class="fi-rs-trash"></i></a></td>
-                                </tr>
-                                <tr>
-                                    <td class="image"><img src="assets/imgs/shop/product-3-1.jpg" alt="#"></td>
-                                    <td class="product-des">
-                                        <h5 class="product-name"><a href="shop-product-right.html">Amazon Brand - Daily Ritual Women's Jersey </a></h5>
-                                        <p class="font-xs">Erat amet et et amet diam et et.<br> Justo amet at dolore
-                                        </p>
-                                    </td>
-                                    <td class="price" data-title="Price"><span>$62.00 </span></td>
-                                    <td class="text-center" data-title="Stock">
-                                        <span class="text-danger font-weight-bold">Out of stock</span>
-                                    </td>
-                                    <td class="text-right" data-title="Cart">
-                                        <button class="btn btn-sm btn-secondary"><i class="fi-rs-headset mr-5"></i>Contact Us</button>
-                                    </td>
-                                    <td class="action" data-title="Remove"><a href="#"><i class="fi-rs-trash"></i></a></td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
+    <div class="container">
+        <div class="row">
+            <div class="col-12">
+                {% if wishlist_items %}
+                <div class="table-responsive">
+                    <table class="table shopping-summery text-center">
+                        <thead>
+                            <tr class="main-heading">
+                                <th scope="col">Image</th>
+                                <th scope="col" colspan="2">Product</th>
+                                <th scope="col">Price</th>
+                                <th scope="col">Stock Status</th>
+                                <th scope="col">Remove</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in wishlist_items %}
+                            <tr>
+                                <td class="image product-thumbnail">
+                                    <img src="{{ item.product_variant.image1.url }}" alt="{{ item.product_variant.product.name }}">
+                                </td>
+                                <td class="product-des product-name">
+                                    <h5 class="product-name">
+                                        <a href="{% url 'userlog:product_details' item.product_variant.product.id %}">{{ item.product_variant.product.title }}</a>
+                                    </h5>
+                                    <p class="font-xs">{{ item.product_variant.product.title }}</p>
+                                </td>
+                                <td class="price" data-title="Price">
+                                    <span>₹{{ item.product_variant.price }}</span>
+                                </td>
+                                <td class="text-center" data-title="Stock">
+                                    {% if item.product_variant.stock > 0 %}
+                                    <span class="color3 font-weight-bold">In Stock</span>
+                                    {% else %}
+                                    <span class="text-danger font-weight-bold">Out of Stock</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-right" data-title="Cart">
+                                    {% if item.product_variant.stock > 0 %}
+                                    <button class="btn btn-sm add-to-cart" data-product-variant-id="{{ item.product_variant.id }}">
+                                        <i class="fi-rs-shopping-bag mr-5"></i>Add to cart
+                                    </button>
+                                    {% else %}
+                                    <button class="btn btn-sm btn-secondary" disabled>
+                                        <i class="fi-rs-shopping-bag mr-5"></i>Out of Stock
+                                    </button>
+                                    {% endif %}
+                                </td>
+                                <td class="action" data-title="Remove">
+                                    <button class="btn btn-sm remove-from-wishlist" data-wishlist-item-id="{{ item.id }}">
+                                        <i class="fi-rs-trash"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>    
                 </div>
+                {% else %}
+                <p>Your wishlist is empty. <a href="{% url 'userlog:user_products' %}">Continue shopping</a>.</p>
+                {% endif %}
             </div>
         </div>
-    </section>
+    </div>
+</section>
+{% block extra_js %}
+ <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<!-- Your custom JS should come after this --></script>
+<script>
+$(document).ready(function() {
+    // Handle Add to Cart
+    $(document).on('click', '.add-to-cart', function(e) {
+        console.log("Add to cart clicked");
+        e.preventDefault();
+        var productVariantId = $(this).data('product-variant-id');
+        var button = $(this);
 
+        $.ajax({
+            url: '{% url "cart:add_to_cart" %}',
+            type: 'POST',
+            data: {
+                'product_variant_id': productVariantId,
+                'quantity': 1,
+                'csrfmiddlewaretoken': '{{ csrf_token }}'
+            },
+            dataType: 'json',
+            success: function(response) {
+                if (response.success) {
+                    alert('Product added to cart successfully!');
+                    updateCounts();
+                    button.prop('disabled', true).text('Added to Cart');
+                } else {
+                    alert(response.error || 'Error adding product to cart');
+                }
+            },
+            error: function(xhr, errmsg, err) {
+                alert('An error occurred: ' + errmsg);
+            }
+        });
+    });
+
+    // Handle Remove from Wishlist
+    $(document).on('click', '.remove-from-wishlist', function(e) {
+        e.preventDefault();
+        var wishlistItemId = $(this).data('wishlist-item-id');
+        var row = $(this).closest('tr');
+        var wishlistTable = $('#wishlist-table');
+
+        $.ajax({
+            url: '{% url "cart:remove_from_wishlist" %}',
+            type: 'POST',
+            data: {
+                'wishlist_item_id': wishlistItemId,
+                'csrfmiddlewaretoken': '{{ csrf_token }}'
+            },
+            dataType: 'json',
+            success: function(response) {
+                if (response.success) {
+                    row.remove();
+                     // Check if the table is empty
+                    if (wishlistTable.find('tr').length === 0) {
+                        wishlistTable.hide(); // Hide the table if no items are left
+                    }
+                    
+                } else {
+                    alert(response.message || 'Error removing item from wishlist');
+                }
+            },
+            error: function(xhr, errmsg, err) {
+                alert('An error occurred: ' + errmsg);
+            }
+        });
+    });
+
+    // Function to update wishlist and cart counts
+    function updateCounts() {
+        $.ajax({
+            url: '{% url "cart:count" %}',
+            type: 'GET',
+            dataType: 'json',
+            success: function(data) {
+                $('.wishlist-count').text(data.wishlist_count);
+                $('.cart-count').text(data.cart_count);
+            },
+            error: function(xhr, errmsg, err) {
+                console.error('Error updating counts:', errmsg);
+            }
+        });
+    }
+
+    // Initial count fetch
+    updateCounts();
+});
+</script>
+{% endblock %}
 {% endblock %}

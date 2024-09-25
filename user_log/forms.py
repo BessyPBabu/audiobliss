@@ -1,6 +1,8 @@
 from django import forms
 from django.contrib.auth.forms import UserCreationForm , PasswordResetForm
 from .models import Account ,Address
+import re
+from django.core.validators import validate_email
 
 class RegistrationForm(UserCreationForm):
     email = forms.EmailField(max_length=60, help_text="Required. Add a valid email address")
@@ -29,6 +31,8 @@ class AccountAuthenticationForm(forms.ModelForm):
     
 class OTPForm(forms.Form):
     otp = forms.CharField(label='OTP', max_length=6)
+
+
 
 
 class AddressForm(forms.ModelForm):
@@ -80,11 +84,54 @@ class AddressForm(forms.ModelForm):
             }
         }
 
+    def clean_house_name(self):
+        house_name = self.cleaned_data.get('house_name')
+        if not re.match(r'^[a-zA-Z0-9\s]+$', house_name):
+            raise forms.ValidationError('House name can only contain letters, numbers, and spaces.')
+        return house_name
+
+    def clean_streat_name(self):
+        streat_name = self.cleaned_data.get('streat_name')
+        if not re.match(r'^[a-zA-Z\s]+$', streat_name):
+            raise forms.ValidationError('Street name can only contain letters and spaces.')
+        return streat_name
+
+    def clean_post_office(self):
+        post_office = self.cleaned_data.get('post_office')
+        if not re.match(r'^[a-zA-Z\s]+$', post_office):
+            raise forms.ValidationError('Post office can only contain letters and spaces.')
+        return post_office
+
+    def clean_place(self):
+        place = self.cleaned_data.get('place')
+        if not re.match(r'^[a-zA-Z\s]+$', place):
+            raise forms.ValidationError('Place can only contain letters and spaces.')
+        return place
+
+    def clean_district(self):
+        district = self.cleaned_data.get('district')
+        if not re.match(r'^[a-zA-Z\s]+$', district):
+            raise forms.ValidationError('District can only contain letters and spaces.')
+        return district
+
+    def clean_state(self):
+        state = self.cleaned_data.get('state')
+        if not re.match(r'^[a-zA-Z\s]+$', state):
+            raise forms.ValidationError('State can only contain letters and spaces.')
+        return state
+
+    def clean_country(self):
+        country = self.cleaned_data.get('country')
+        if country and not re.match(r'^[a-zA-Z\s]+$', country):
+            raise forms.ValidationError('Country can only contain letters and spaces.')
+        return country
+
     def clean_pincode(self):
         pincode = self.cleaned_data.get('pincode')
-        if not pincode or len(pincode) != 6 or not pincode.isdigit():
+        if not pincode or not re.match(r'^\d{6}$', pincode):
             raise forms.ValidationError('Enter a valid 6-digit pincode.')
         return pincode
+
 
 
 
@@ -98,11 +145,42 @@ class CustomPasswordResetForm(PasswordResetForm):
             raise forms.ValidationError("There is no user registered with the specified email address!")
         return email
     
+
+
 class AccountUpdateForm(forms.ModelForm):
     class Meta:
         model = Account
-        fields = ['username', 'email','phone','profile_image',]
+        fields = ['username', 'phone', 'profile_image']
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields['profile_image'].widget.attrs.update({'class': 'form-control-file'})
+
+    def clean_username(self):
+        username = self.cleaned_data.get('username')
+        if not re.match(r'^[a-zA-Z0-9_]+$', username):
+            raise forms.ValidationError('Username can only contain letters, numbers, and underscores.')
+        return username
+
+    # def clean_email(self):
+    #     email = self.cleaned_data.get('email')
+    #     validate_email(email)  # Use Django's built-in email validator
+    #     return email
+
+    def clean_phone(self):
+        phone = self.cleaned_data.get('phone')
+        if not re.match(r'^\+?\d{10,15}$', phone):
+            raise forms.ValidationError('Enter a valid phone number with 10-15 digits.')
+        return phone
+
+
+class EmailUpdateForm(forms.ModelForm):
+    class Meta:
+        model = Account
+        fields = ['new_email']
+
+    def clean_new_email(self):
+        new_email = self.cleaned_data.get('new_email')
+        if Account.objects.filter(email=new_email).exists():
+            raise forms.ValidationError("This email is already in use.")
+        return new_email

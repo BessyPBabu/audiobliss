@@ -1,0 +1,131 @@
+{% extends 'user_log/baseuser.html' %}
+{% block title %}Audio Bliss - Payment{% endblock %}
+{% block body %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header text-center">
+                    <h2 class="mb-0">Complete Payment</h2>
+                </div>
+                <div class="card-body">
+                    <!-- Payment Button -->
+                    <div class="text-center mb-4">
+                        <button id="rzp-button1" class="btn btn-primary btn-lg">Pay with Razorpay</button>
+                    </div>
+
+                    <!-- Payment Processing Spinner -->
+                    <div id="payment-processing" class="text-center" style="display: none;">
+                        <p>Your payment is being processed...</p>
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="sr-only">Loading...</span>
+                        </div>
+                    </div>
+
+                    <!-- Payment Success Message with SVG -->
+                    <div id="payment-success" class="text-center" style="display: none;">
+                        <p>Payment successful!</p>
+                        <svg width="48" height="48" fill="green" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M16 8A8 8 0 1 0 0 8a8 8 0 0 0 16 0zM7.293 10.707a1 1 0 0 1-1.414 0l-2.5-2.5a1 1 0 0 1 1.414-1.414L7 8.586l4.293-4.293a1 1 0 0 1 1.414 1.414l-5 5z"/>
+                        </svg>
+                    </div>
+
+                    <!-- Payment Error Message with SVG -->
+                    <div id="payment-error" class="text-center" style="display: none;">
+                        <p>Payment failed. Please try again.</p>
+                        <svg width="48" height="48" fill="red" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm3.536-10.464a1 1 0 0 1 0 1.414L9.414 8l2.122 2.122a1 1 0 0 1-1.414 1.414L8 9.414l-2.122 2.122a1 1 0 0 1-1.414-1.414L6.586 8 4.464 5.878a1 1 0 0 1 1.414-1.414L8 6.586l2.122-2.122a1 1 0 0 1 1.414 0z"/>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block extra_js %}
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    var options = {
+        "key": "{{ razorpay_merchant_key }}",
+        "amount": "{{ razorpay_amount }}",
+        "currency": "{{ currency }}",
+        "name": "Audio Bliss",
+        "description": "Order Payment",
+        "order_id": "{{ razorpay_order_id }}",
+        "handler": function (response) {
+            // Handle successful payment
+            // window.location.href('URL'); // Redirect after success
+            // alert(response.razorpay_payment_id);
+            // alert(response.razorpay_order_id);
+            // alert(response.razorpay_signature);
+
+            $('#payment-processing').show();
+            $('#rzp-button1').hide();
+
+            // Send payment info to server for verification
+            $.ajax({
+                url: '{% url "cart:payment_verify" %}',
+                type: 'POST',
+                data: {
+                    razorpay_payment_id: response.razorpay_payment_id,
+                    razorpay_order_id: response.razorpay_order_id,
+                    razorpay_signature: response.razorpay_signature
+                },
+                success: function(serverResponse) {
+                    if(serverResponse.status === 'success') {
+                        $('#payment-processing').hide();
+                        $('#payment-success').show();
+                        // Redirect after a short delay
+                        setTimeout(function() {
+                            window.location.href = '{% url "orders:success" %}';
+                        }, 2000);
+                    } else {
+                        showError(serverResponse.message);
+                    }
+                },
+                error: function() {
+                    showError('An error occurred. Please try again.');
+                }
+            });
+        },
+        "prefill": {
+            "name": "{{ order.user.username }}",
+            "email": "{{ order.user.email }}",
+            "contact": "{{ order.user.phone }}"
+        },
+        "notes": {
+            "address": "Razorpay Corporate Office"
+        },
+        "theme": {
+            "color": "#3399cc"
+        }
+    };
+
+    var rzp1 = new Razorpay(options);
+
+    // Handle payment failures
+    rzp1.on('payment.failed', function (response) {
+        showError(response.error.description);
+        window.location.href = '{% url "cart:payment_failed" %}?order_id={{ order.order_id }}';
+        
+    });
+
+    document.getElementById('rzp-button1').onclick = function(e) {
+        rzp1.open();
+        e.preventDefault();
+        // Uncomment the following line if you want to disable the button on click
+        // this.disabled = true;
+    };
+
+    function showError(message) {
+        $('#payment-processing').hide();
+        $('#payment-error').show().find('p').text(message);
+    }
+});
+</script>
+{% endblock %}
+
+{% endblock %}

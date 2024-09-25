@@ -1,0 +1,105 @@
+{% extends 'user_log/base.html' %}
+
+{% block title %}Audio Bliss - Edit Address{% endblock %}
+{% load static %}
+{% block body %}
+
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h3>Edit Address</h3>
+                </div>
+                <div class="card-body">
+                    <form method="POST" novalidate>
+                        {% csrf_token %}
+                        <div class="form-group">
+                            <label for="house_name">House Name</label>
+                            {{ address_form.house_name }}
+                            {% if address_form.house_name.errors %}
+                                <div class="text-danger">
+                                    {{ address_form.house_name.errors.as_text }}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="form-group">
+                            <label for="streat_name">Street Name</label>
+                            {{ address_form.streat_name }}
+                            {% if address_form.streat_name.errors %}
+                                <div class="text-danger">
+                                    {{ address_form.streat_name.errors.as_text }}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="form-group">
+                            <label for="post_office">Post Office</label>
+                            {{ address_form.post_office }}
+                            {% if address_form.post_office.errors %}
+                                <div class="text-danger">
+                                    {{ address_form.post_office.errors.as_text }}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="form-group">
+                            <label for="place">Place</label>
+                            {{ address_form.place }}
+                            {% if address_form.place.errors %}
+                                <div class="text-danger">
+                                    {{ address_form.place.errors.as_text }}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="form-group">
+                            <label for="district">District</label>
+                            {{ address_form.district }}
+                            {% if address_form.district.errors %}
+                                <div class="text-danger">
+                                    {{ address_form.district.errors.as_text }}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="form-group">
+                            <label for="state">State</label>
+                            {{ address_form.state }}
+                            {% if address_form.state.errors %}
+                                <div class="text-danger">
+                                    {{ address_form.state.errors.as_text }}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="form-group">
+                            <label for="country">Country</label>
+                            {{ address_form.country }}
+                            {% if address_form.country.errors %}
+                                <div class="text-danger">
+                                    {{ address_form.country.errors.as_text }}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="form-group">
+                            <label for="pincode">Pincode</label>
+                            {{ address_form.pincode }}
+                            {% if address_form.pincode.errors %}
+                                <div class="text-danger">
+                                    {{ address_form.pincode.errors.as_text }}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <button type="submit" class="btn btn-primary">Update Address</button>
+                        <a href="{% url 'userlog:user_profile' %}" class="btn btn-secondary">Cancel</a>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

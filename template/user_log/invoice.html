@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Invoice - Audiobliss</title>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/invoice.css' %}">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            color: #333;
+        }
+        .invoice-container {
+            max-width: 800px;
+            margin: 40px auto;
+            padding: 20px;
+            border: 1px solid #ddd;
+            background-color: #fff;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 30px;
+        }
+        h2 {
+            color: #666;
+            margin-bottom: 10px;
+            border-bottom: 2px solid #ddd;
+            padding-bottom: 5px;
+        }
+        .order-details, .product-details, .billing-shipping {
+            margin-bottom: 30px;
+        }
+        p {
+            margin: 5px 0;
+            font-size: 14px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        table, th, td {
+            border: 1px solid #ddd;
+        }
+        th, td {
+            padding: 12px;
+            text-align: left;
+        }
+        th {
+            background-color: #f8f8f8;
+        }
+        .total-row {
+            font-weight: bold;
+            background-color: #f0f0f0;
+        }
+        .card {
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            overflow: hidden;
+        }
+        .card-header {
+            background-color: #007bff;
+            color: #fff;
+            padding: 10px;
+            font-size: 16px;
+            text-align: center;
+        }
+        .card-body {
+            padding: 15px;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+        .btn {
+            display: inline-block;
+            padding: 10px 20px;
+            font-size: 16px;
+            color: #fff;
+            background-color: #007bff;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            text-decoration: none;
+            text-align: center;
+        }
+
+        .btn:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <div class="invoice-container">
+        <h1>Invoice</h1>
+        
+
+        <!-- Order Details -->
+        <div class="order-details">
+            <h2>Order Details</h2>
+            <p><strong>Order ID:</strong> {{ order.id }}</p>
+            <p><strong>Order Date:</strong> {{ order.created_at }}</p>
+            <p><strong>Total Amount:</strong> ₹{{ order.total_amount }}</p>
+            
+        </div>
+
+        <!-- Product Details -->
+        <div class="product-details">
+            <h2>Products</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Product</th>
+                        <th>Quantity</th>
+                        <th>Price</th>
+                        <th>Total</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in order_items %}
+                    <tr>
+                        <td>{{ item.product_variant.product.title }}</td>
+                        <td>{{ item.quantity }}</td>
+                        <td>₹{{ item.product_variant.price }}</td>
+                        <td>₹{{ item.total_price|floatformat:2 }}</td>
+                    </tr>
+                    {% endfor %}
+                    <tr class="total-row">
+                        <td colspan="3"> Total</td>
+                        <td>₹{{ order.total_amount }}</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Billing and Shipping -->
+        <div class="billing-shipping">
+            <div class="card">
+                <div class="card-header">
+                    Shipping Address
+                </div>
+                <div class="card-body">
+                    <!-- <p><strong>Name:</strong> {{ order.address.user }}</p> -->
+                    <p><strong>House Name:</strong> {{ order.address.house_name }}</p>
+                    <p><strong>Street:</strong> {{ order.address.streat_name }}</p>
+                    <p><strong>City:</strong> {{ order.address.place }}</p>
+                    <p><strong>District:</strong> {{ order.address.district }}</p>
+                    <p><strong>State:</strong> {{ order.address.state }}</p>
+                    <p><strong>Pincode:</strong> {{ order.address.pincode }}</p>
+                </div>
+            </div>
+        </div>
+        <form method="get" action="">
+            <button type="submit" name="download" value="pdf" class="btn btn-primary">Download Invoice as PDF</button>
+        </form>
+        
+    </div>
+</body>
+</html>

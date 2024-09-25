@@ -17,6 +17,9 @@
                     <h2 class="card-title">Order Placed Successfully!</h2>
                     <p class="card-text">Thank you for your purchase. Your order has been received and is being processed.</p>
                     <a href="{% url 'userlog:index' %}" class="btn btn-primary">Continue Shopping</a>
+                    {% if latest_order %}
+                        <a href="{% url 'orders:invoice' latest_order.id %}" class="btn btn-secondary">View Invoice</a>
+                    {% endif %}
                 </div>
             </div>
         </div>

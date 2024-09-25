@@ -51,22 +51,51 @@
             <h5>Order Items</h5>
         </div>
         <div class="card-body">
-            <ul class="list-group">
-                {% for item in order_items %}
-                    <li class="list-group-item d-flex justify-content-between align-items-center">
-                        <div>
-                            <strong>{{ item.product_variant.product.title }}</strong> - 
-                            {{ item.product_variant.color.name }} 
-                            ({{ item.quantity }} units)
-                        </div>
-                        <div>
-                            ₹{{ item.product_price }} each
-                        </div>
-                    </li>
-                {% endfor %}
-            </ul>
+            <table class="table table-bordered">
+                <thead>
+                    <tr>
+                        <th>Image</th>
+                        <th>Title</th>
+                        <th>Color</th>
+                        <th>Quantity</th>
+                        <th>Price Each</th>
+                        <th>Total Price</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in order_items %}
+                        <tr>
+                            <td>
+                                <img src="{{ item.product_variant.image1.url }}" alt="{{ item.product_variant.product.title }}" style="width: 50px; height: 50px;">
+                            </td>
+                            <td>
+                                <strong>{{ item.product_variant.product.title }}</strong>
+                            </td>
+                            <td>
+                                {{ item.product_variant.color.name }}
+                            </td>
+                            <td>
+                                {{ item.quantity }}
+                            </td>
+                            <td>
+                                ₹{{ item.product_price }}
+                            </td>
+                            <td>
+                                ₹{{ item.total_price|floatformat:2 }}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+                <tfoot>
+                    <tr>
+                        <td colspan="5" class="text-right"><strong>Total Amount:</strong></td>
+                        <td>₹{{ order.order_total }}</td>
+                    </tr>
+                </tfoot>
+            </table>
         </div>
     </div>
+    
 
     <!-- Action Buttons -->
     <div class="text-right">

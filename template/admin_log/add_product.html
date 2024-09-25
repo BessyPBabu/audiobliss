@@ -7,7 +7,7 @@
 
 <section class="content-main">
     <div class="row">
-        <div class="col-6">
+        <div class="col-12">
             <div class="content-header">
                 <h2 class="content-title">Add New Product</h2>
             </div>
@@ -24,63 +24,96 @@
     </div>
     {% endif %}
 
-    <form method="post" enctype="multipart/form-data">
-        {% csrf_token %}
-        <div class="row">
-            <div class="col-lg-6">
+    <div class="row">
+        <div class="col-lg-8">
+            <form method="post" enctype="multipart/form-data">
+                {% csrf_token %}
                 <div class="card mb-4">
                     <div class="card-body">
-                        <div class="row">
-                            <div class="col-md-3">
-                                <h6>1. General info</h6>
+                        <!-- General Info Section -->
+                        <div class="row mb-4">
+                            <div class="col-md-4">
+                                <h6 class="fw-bold">1. General Info</h6>
                             </div>
-                            <div class="col-md-9">
-                                <div class="mb-4">
-                                    <label class="form-label">Product title</label>
+                            <div class="col-md-8">
+                                <div class="mb-3">
+                                    <label class="form-label">Product Title</label>
                                     {{ form.title }}
                                     {% if form.title.errors %}
-                                    <div class="alert alert-danger">{{ form.title.errors }}</div>
+                                    <div class="alert alert-danger mt-2">{{ form.title.errors }}</div>
                                     {% endif %}
                                 </div>
-                                <div class="mb-4">
+                                <div class="mb-3">
                                     <label class="form-label">Description</label>
                                     {{ form.description }}
                                     {% if form.description.errors %}
-                                    <div class="alert alert-danger">{{ form.description.errors }}</div>
+                                    <div class="alert alert-danger mt-2">{{ form.description.errors }}</div>
                                     {% endif %}
                                 </div>
-                                <div class="mb-4">
-                                    <label class="form-label">Brand name</label>
-                                    {{ form.brand_name }}
-                                    {% if form.brand_name.errors %}
-                                    <div class="alert alert-danger">{{ form.brand_name.errors }}</div>
+                                <div class="mb-3">
+                                    <label class="form-label">Brand Name</label>
+                                    {{ form.brand }}
+                                    {% if form.brand.errors %}
+                                    <div class="alert alert-danger mt-2">{{ form.brand.errors }}</div>
                                     {% endif %}
                                 </div>
                             </div>
                         </div>
-                        <hr class="mb-4 mt-0">
-                        <div class="row">
-                            <div class="col-md-3">
-                                <h6>2. Category</h6>
+
+                        <!-- Category Section -->
+                        <div class="row mb-4">
+                            <div class="col-md-4">
+                                <h6 class="fw-bold">2. Category</h6>
                             </div>
-                            <div class="col-md-9">
-                                <div class="mb-4">
+                            <div class="col-md-8">
+                                <div class="mb-3">
                                     {{ form.category }}
                                     {% if form.category.errors %}
-                                    <div class="alert alert-danger">{{ form.category.errors }}</div>
+                                    <div class="alert alert-danger mt-2">{{ form.category.errors }}</div>
                                     {% endif %}
                                 </div>
                             </div>
                         </div>
-                        <hr class="mb-4 mt-0">
-                        <div class="mb-4">
+
+                        <!-- Is Active Section -->
+                        <div class="row mb-4">
+                            <div class="col-md-4">
+                                <h6 class="fw-bold">3. Status</h6>
+                            </div>
+                            <div class="col-md-8">
+                                <div class="form-check">
+                                    {{ form.is_active }}
+                                    <label class="form-check-label" for="id_is_active">
+                                        Is Active
+                                    </label>
+                                    {% if form.is_active.errors %}
+                                    <div class="alert alert-danger mt-2">{{ form.is_active.errors }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Submit Button -->
+                        <div class="mb-3 text-end">
                             <button type="submit" class="btn btn-primary">Submit</button>
                         </div>
                     </div>
                 </div>
+            </form>
+        </div>
+        <div class="col-lg-4">
+            <div class="card">
+                <div class="card-body">
+                    <h3>Add New Brand</h3>
+                    <form method="post" id="brandForm">
+                        {% csrf_token %}
+                        {{ brand_form.as_p }}
+                        <button type="submit" name="add_brand" class="btn btn-primary">Add Brand</button>
+                    </form>
+                </div>
             </div>
         </div>
-    </form>
+    </div>
 </section>
 
 {% endblock %}

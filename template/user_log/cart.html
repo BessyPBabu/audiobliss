@@ -5,32 +5,34 @@
 {% block body %}
 {% load static %}
 {% block extra_styles %}
-<!-- <style>
+<style>
     .detail-qty {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
 
-.detail-qty .qty-down,
-.detail-qty .qty-up {
-    padding: 5px;
-    background-color: #f0f0f0;
-    border-radius: 5px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
+    .detail-qty .qty-down,
+    .detail-qty .qty-up {
+        padding: 3px 6px;
+        background-color: #f0f0f0;
+        border-radius: 3px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        font-size: 14px;
+    }
 
-.detail-qty .qty-val {
-    text-align: center;
-    width: 40px;
-    margin: 0 5px;
-    border: 1px solid #ddd;
-    border-radius: 5px;
-}
-
-</style> -->
+    .detail-qty .qty-val {
+        text-align: center;
+        width: 40px; /* Reduced width */
+        margin: 0 3px; /* Reduced margin */
+        border: 1px solid #ddd;
+        border-radius: 3px; /* Reduced border radius */
+        font-size: 14px;
+    }
+</style>
 {% endblock %}
 <main class="main">
     <div class="page-header breadcrumb-wrap">
@@ -52,7 +54,7 @@
                                 <tr class="main-heading">
                                     <th scope="col">Image</th>
                                     <th scope="col">Name</th>
-                                    <th scope="col">Price</th>
+                                    <th scope="col">Price Each</th>
                                     <th scope="col">Quantity</th>
                                     <th scope="col">Subtotal</th>
                                     <th scope="col">Remove</th>
@@ -60,22 +62,21 @@
                             </thead>
                             <tbody>
                                 {% for item in cart_items %}
-                                <tr>
+                                <tr data-product-id="{{ item.id }}">
                                     <td class="image product-thumbnail"><img src="{{ item.product_variant.image1.url }}" alt="{{ item.product_variant.product.title }}"></td>
                                     <td class="product-des product-name">
                                         <h5 class="product-name"><a href="">{{ item.product_variant.product.title }}</a></h5>
                                         <p class="font-xs">{{ item.product_variant.color.name }}</p>
                                     </td>
-                                    <td class="price" data-title="Price"><span>&#8377;{{ item.product_variant.price|floatformat:2 }}</span></td>
+                                    <td class="price" data-title="Price"><span>&#8377;{{ item.price_at_addition|floatformat:2 }}</span></td>
                                     <td class="text-center" data-title="Stock">
                                         <form action="{% url 'cart:update_cart' item.id %}" method="post" class="cart-update-form">
                                             {% csrf_token %}
-                                            <div class="detail-qty border radius">
-                                                <input type="number" name="quantity" class="qty-val" value="{{ item.quantity }}" min="1" max="{{ item.product_variant.max_quantity_per_user }}" style="width: 60px;">
-                                            </div>
+                                            <button type="button" class="quantity-decrement">-</button>
+                                            <input type="number" name="quantity" class="qty-val" value="{{ item.quantity }}" min="1" max="{{ item.product_variant.max_quantity_per_user }}">
+                                            <button type="button" class="quantity-increment">+</button>
                                         </form>
                                     </td>
-                                    
                                     <td class="text-right" data-title="Cart">
                                         <span class="item-subtotal">&#8377;{{ item.subtotal|floatformat:2 }}</span>
                                     </td>
@@ -112,10 +113,6 @@
                                             <td class="cart_total_amount"><span class="font-lg fw-900 text-brand">&#8377;{{ total|floatformat:2 }}</span></td>
                                         </tr>
                                         <tr>
-                                            <td class="cart_total_label">Shipping</td>
-                                            <td class="cart_total_amount"> <i class="ti-gift mr-5"></i> Free Shipping</td>
-                                        </tr>
-                                        <tr>
                                             <td class="cart_total_label">Total</td>
                                             <td class="cart_total_amount"><strong><span class="font-xl fw-900 text-brand">&#8377;{{ total|floatformat:2 }}</span></strong></td>
                                         </tr>
@@ -134,55 +131,169 @@
     </section>
 </main>
 
-<script>
-    $(document).ready(function() {
-    $('.qty-val').on('change', function() {
-        var $form = $(this).closest('form');
-        updateCart($form);
-    });
+<!-- Include jQuery from CDN -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 
+<script>
+$(document).ready(function() {
+    // Store original quantities for reverting if needed
+    var originalQuantities = {};
+
+    // Function to update cart via AJAX
     function updateCart($form) {
+        var $row = $form.closest('tr');
+        var $quantityInput = $form.find('.qty-val');
+        var newQuantity = parseInt($quantityInput.val(), 10);
+        var productId = $row.data('product-id');
+
+        if (!(productId in originalQuantities)) {
+            originalQuantities[productId] = $quantityInput.val();
+        }
+
         $.ajax({
             url: $form.attr('action'),
             type: 'POST',
             data: $form.serialize(),
             success: function(response) {
                 if (response.success) {
-                    var $row = $form.closest('tr');
-                    $row.find('.item-subtotal').text('₹' + response.item_subtotal.toFixed(2));
-                    
-                    // Update cart total
-                    $('.cart_total_amount .font-xl').text('₹' + response.cart_total.toFixed(2));
-                    $('.cart_total_amount .font-lg').text('₹' + response.cart_total.toFixed(2));
-                    
-                    // Update cart subtotal
-                    $('.cart_total_amount .cart-subtotal').text('₹' + response.cart_total.toFixed(2));
-                    
-                    // Update cart count if you have this element
-                    $('.cart-count').text(response.cart_count);
+                    updateRowAndTotals($row, newQuantity, response);
+                } else {
+                    alert(response.error);
+                    revertQuantity($quantityInput, productId);
+                }
+            },
+            error: function(xhr) {
+                alert(xhr.responseJSON && xhr.responseJSON.error ? xhr.responseJSON.error : 'There was an error updating the cart. Please try again.');
+                revertQuantity($quantityInput, productId);
+            }
+        });
+    }
 
-                    // If the item was removed (quantity set to 0), remove the row
-                    if (response.item_subtotal === 0) {
-                        $row.remove();
-                    }
+    function updateRowAndTotals($row, quantity, response) {
+        var price = parseFloat($row.find('.price span').text().replace('₹', ''));
+        var newSubtotal = (quantity * price).toFixed(2);
+        
+        $row.find('.item-subtotal').text('₹' + newSubtotal);
+        updateCartTotal(response.cart_total, response.cart_count);
+        
+        if (quantity === 0) {
+            $row.remove();
+        }
 
-                    // Check if cart is empty and show a message if it is
+        if (response.cart_count === 0) {
+            $('.shopping-summery').html('<p>Your cart is empty. <a href="/products/">Continue shopping</a>.</p>');
+        }
+    }
+
+    function revertQuantity($input, productId) {
+        $input.val(originalQuantities[productId]);
+        updateCartTotal();
+    }
+
+    function updateCartTotal(cartTotal, cartCount) {
+        // Ensure cartTotal is a number
+        if (!isNaN(parseFloat(cartTotal))) {
+            var total = parseFloat(cartTotal);
+            $('.cart_total_amount .font-xl').text('₹' + total.toFixed(2));
+            $('.cart_total_amount .font-lg').text('₹' + total.toFixed(2));
+            $('.cart_total_amount .cart-subtotal').text('₹' + total.toFixed(2));
+        } else {
+            console.error('Invalid cartTotal:', cartTotal);
+            $('.cart_total_amount .font-xl').text('₹0.00');
+            $('.cart_total_amount .font-lg').text('₹0.00');
+            $('.cart_total_amount .cart-subtotal').text('₹0.00');
+        }
+        $('.cart-count').text(cartCount);
+    }
+
+    // Event listener for quantity changes
+    $('.qty-val').on('change keyup', function() {
+        var $form = $(this).closest('form');
+        updateCart($form);
+    });
+
+    // Event listener for increment button
+    $('.quantity-increment').on('click', function() {
+        var $quantityInput = $(this).siblings('.qty-val');
+        var currentValue = parseInt($quantityInput.val(), 10);
+        var maxQuantity = parseInt($quantityInput.attr('max'), 10);
+
+        if (currentValue < maxQuantity) {
+            $quantityInput.val(currentValue + 1).trigger('change');
+        }
+    });
+
+    // Event listener for decrement button
+    $('.quantity-decrement').on('click', function() {
+        var $quantityInput = $(this).siblings('.qty-val');
+        var currentValue = parseInt($quantityInput.val(), 10);
+
+        if (currentValue > 1) {
+            $quantityInput.val(currentValue - 1).trigger('change');
+        }
+    });
+
+    // Event listener for remove item button
+    $('.action a').on('click', function(e) {
+        e.preventDefault();
+        var $row = $(this).closest('tr');
+        var url = $(this).attr('href');
+
+        $.ajax({
+            url: url,
+            type: 'POST',
+            data: {
+                csrfmiddlewaretoken: $('input[name=csrfmiddlewaretoken]').val()
+            },
+            success: function(response) {
+                if (response.success) {
+                    // Remove the row from the DOM
+                    $row.remove();
+
+                    // Update the cart total and count
+                    updateCartTotal(response.cart_total, response.cart_count);
+
+                    // Check if the cart is empty and show the empty cart message
                     if (response.cart_count === 0) {
-                        $('.shopping-summery').html('<p>Your cart is empty. <a href="/products/">Continue shopping</a>.</p>');
+                        $('.shopping-summery').html('<p>Your cart is empty.</p>');
                     }
+                } else {
+                    alert(response.message || 'An error occurred while removing the item.');
+                }
+            },
+            error: function(xhr) {
+                alert('There was an error removing the item. Please try again.');
+            }
+        });
+    });
+
+
+     
+    // Event listener for clear cart button
+    $('form[action$="/clear_cart/"]').on('submit', function(e) {
+        e.preventDefault();
+        var $form = $(this);
+
+        $.ajax({
+            url: $form.attr('action'),
+            type: 'POST',
+            data: $form.serialize(),
+            success: function(response) {
+                if (response.success) {
+                    $('.shopping-summery tbody tr').remove();
+                    updateCartTotal(response.cart_total, 0);
+                    $('.shopping-summery').html('<p>Your cart is empty. <a href="/products/">Continue shopping</a>.</p>');
                 } else {
                     alert(response.error);
                 }
             },
-            error: function(xhr) {
-                if (xhr.responseJSON && xhr.responseJSON.error) {
-                    alert(xhr.responseJSON.error);
-                } else {
-                    alert('There was an error updating the cart. Please try again.');
-                }
+            error: function(xhr, status, error) {
+                console.error("AJAX error: " + status + ": " + error);
+                console.error(xhr.responseText);
+                alert('There was an error updating the cart. Please try again.');
             }
         });
-    }
+    });
 });
 </script>
 {% endblock %}

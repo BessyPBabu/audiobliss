@@ -1,231 +1,365 @@
 {% extends 'admin_log/base.html' %}
 
-{% block title %}Audio Bliss - User Management{% endblock %}
+{% block title %}Audio Bliss -Dashboard{% endblock %}
 
 {% block body %}
 {% load static %}
+
 <section class="content-main">
     <div class="content-header">
         <div>
-            <h2 class="content-title card-title">Dashboard </h2>
-            <p>Whole data about your business here</p>
+            <h2 class="content-title card-title">Dashboard</h2>
+            <p>Overview of  business performance</p>
         </div>
         <div>
-            <a href="#" class="btn btn-primary"><i class="text-muted material-icons md-post_add"></i>Create report</a>
+            <a href="{% url 'adminlog:sales_report' %}" class="btn btn-primary"><i class="fas fa-file-alt"></i> Create Report</a>
         </div>
     </div>
+
     <div class="row">
-        <div class="col-lg-3">
+        <!-- Revenue -->
+        <div class="col-lg-3 col-md-6">
             <div class="card card-body mb-4">
                 <article class="icontext">
-                    <span class="icon icon-sm rounded-circle bg-primary-light"><i class="text-primary material-icons md-monetization_on"></i></span>
+                    <span class="icon icon-sm rounded-circle bg-primary-light">
+                        <i class="fas fa-rupee-sign text-primary"></i> <!-- Updated icon -->
+                    </span>
                     <div class="text">
                         <h6 class="mb-1 card-title">Revenue</h6>
-                        <span>$13,456.5</span>
-                        <span class="text-sm">
-                            Shipping fees are not included
-                        </span>
+                        <span>₹{{ revenue }}</span> <!-- Updated currency symbol -->
                     </div>
                 </article>
             </div>
         </div>
-        <div class="col-lg-3">
+        <!-- Orders -->
+        <div class="col-lg-3 col-md-6">
             <div class="card card-body mb-4">
                 <article class="icontext">
-                    <span class="icon icon-sm rounded-circle bg-success-light"><i class="text-success material-icons md-local_shipping"></i></span>
+                    <span class="icon icon-sm rounded-circle bg-success-light">
+                        <i class="fas fa-shopping-cart text-success"></i>
+                    </span>
                     <div class="text">
-                        <h6 class="mb-1 card-title">Orders</h6> <span>53.668</span>
-                        <span class="text-sm">
-                            Excluding orders in transit
-                        </span>
+                        <h6 class="mb-1 card-title">Orders</h6>
+                        <span>{{ orders_count }}</span>
                     </div>
                 </article>
             </div>
         </div>
-        <div class="col-lg-3">
+        <!-- Products -->
+        <div class="col-lg-3 col-md-6">
             <div class="card card-body mb-4">
                 <article class="icontext">
-                    <span class="icon icon-sm rounded-circle bg-warning-light"><i class="text-warning material-icons md-qr_code"></i></span>
+                    <span class="icon icon-sm rounded-circle bg-warning-light">
+                        <i class="fas fa-box text-warning"></i>
+                    </span>
                     <div class="text">
-                        <h6 class="mb-1 card-title">Products</h6> <span>9.856</span>
-                        <span class="text-sm">
-                            In 19 Categories
-                        </span>
+                        <h6 class="mb-1 card-title">Products</h6>
+                        <span>{{ product_count }}</span>
                     </div>
                 </article>
             </div>
         </div>
-        <div class="col-lg-3">
+        <!-- Users -->
+        <div class="col-lg-3 col-md-6">
             <div class="card card-body mb-4">
                 <article class="icontext">
-                    <span class="icon icon-sm rounded-circle bg-info-light"><i class="text-info material-icons md-shopping_basket"></i></span>
+                    <span class="icon icon-sm rounded-circle bg-info-light">
+                        <i class="fas fa-users text-info"></i>
+                    </span>
                     <div class="text">
-                        <h6 class="mb-1 card-title">Monthly Earning</h6> <span>$6,982</span>
-                        <span class="text-sm">
-                            Based in your local time.
-                        </span>
+                        <h6 class="mb-1 card-title">Users</h6>
+                        <span>{{ total_users_count }}</span>
                     </div>
                 </article>
             </div>
         </div>
     </div>
+
+    <!-- Sales Reports and Order Status -->
     <div class="row">
-        <div class="col-xl-8 col-lg-12">
-            <!-- <div class="card mb-4">
-                <article class="card-body">
-                    <h5 class="card-title">Sale statistics</h5>
-                    <canvas id="myChart" height="120px"></canvas>
-                </article>
-            </div> -->
-            <div class="row">
-                <div class="col-lg-5">
+        <!-- Sales Reports -->
+        <div class="col-md-8">
+            <div class="dashboard-menu mb-4">
+                <ul class="nav nav-tabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <a class="nav-link active" id="daily_report-tab" data-bs-toggle="tab" href="#daily_report" role="tab" aria-controls="daily_report" aria-selected="true"><i class="fas fa-calendar-day"></i> Daily Report</a>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <a class="nav-link" id="monthly_report-tab" data-bs-toggle="tab" href="#monthly_report" role="tab" aria-controls="monthly_report" aria-selected="false"><i class="fas fa-calendar-alt"></i> Monthly Report</a>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <a class="nav-link" id="yearly_report-tab" data-bs-toggle="tab" href="#yearly_report" role="tab" aria-controls="yearly_report" aria-selected="false"><i class="fas fa-calendar"></i> Yearly Report</a>
+                    </li>
+                </ul>
+            </div>
+
+            <div class="tab-content dashboard-content">
+                <!-- Daily Sales Report -->
+                <div class="tab-pane fade active show" id="daily_report" role="tabpanel" aria-labelledby="daily_report-tab">
                     <div class="card mb-4">
                         <article class="card-body">
-                            <h5 class="card-title">New Members</h5>
-                            <div class="new-member-list">
-                                <div class="d-flex align-items-center justify-content-between mb-4">
-                                    <div class="d-flex align-items-center">
-                                        <img src="{% static 'admin/imgs/people/avatar4.jpg' %}" alt="" class="avatar">
-                                        <div>
-                                            <h6>Patric Adams</h6>
-                                            <p class="text-muted font-xs">
-                                                Sanfrancisco
-                                            </p>
-                                        </div>
-                                    </div>
-                                    <a href="#" class="btn btn-xs"><i class="material-icons md-add"></i> Add</a>
-                                </div>
-                                <div class="d-flex align-items-center justify-content-between mb-4">
-                                    <div class="d-flex align-items-center">
-                                        <img src="{% static 'admin/imgs/people/avatar2.jpg' %}" alt="" class="avatar">
-                                        <div>
-                                            <h6>Dilan Specter</h6>
-                                            <p class="text-muted font-xs">
-                                                Sanfrancisco
-                                            </p>
-                                        </div>
-                                    </div>
-                                    <a href="#" class="btn btn-xs"><i class="material-icons md-add"></i> Add</a>
-                                </div>
-                                <div class="d-flex align-items-center justify-content-between mb-4">
-                                    <div class="d-flex align-items-center">
-                                        <img src="{% static 'admin/imgs/people/avatar3.jpg' %}" alt="" class="avatar">
-                                        <div>
-                                            <h6>Tomas Baker</h6>
-                                            <p class="text-muted font-xs">
-                                                Sanfrancisco
-                                            </p>
-                                        </div>
-                                    </div>
-                                    <a href="#" class="btn btn-xs"><i class="material-icons md-add"></i> Add</a>
-                                </div>
-                            </div>
+                            <h5 class="card-title">Daily Sales Report</h5>
+                            <canvas id="myChart"></canvas>
                         </article>
                     </div>
                 </div>
-                <div class="col-lg-7">
+                <!-- Monthly Sales Report -->
+                <div class="tab-pane fade" id="monthly_report" role="tabpanel" aria-labelledby="monthly_report-tab">
                     <div class="card mb-4">
                         <article class="card-body">
-                            <h5 class="card-title">Recent activities</h5>
-                            <ul class="verti-timeline list-unstyled font-sm">
-                                <li class="event-list">
-                                    <div class="event-timeline-dot">
-                                        <i class="material-icons md-play_circle_outline font-xxl"></i>
-                                    </div>
-                                    <div class="media">
-                                        <div class="me-3">
-                                            <h6><span>Today</span> <i class="material-icons md-trending_flat text-brand ml-15 d-inline-block"></i></h6>
-                                        </div>
-                                        <div class="media-body">
-                                            <div>
-                                                Lorem ipsum dolor sit amet consectetur
-                                            </div>
-                                        </div>
-                                    </div>
-                                </li>
-                                <li class="event-list active">
-                                    <div class="event-timeline-dot">
-                                        <i class="material-icons md-play_circle_outline font-xxl animation-fade-right"></i>
-                                    </div>
-                                    <div class="media">
-                                        <div class="me-3">
-                                            <h6><span>17 May</span> <i class="material-icons md-trending_flat text-brand ml-15 d-inline-block"></i></h6>
-                                        </div>
-                                        <div class="media-body">
-                                            <div>
-                                                Debitis nesciunt voluptatum dicta reprehenderit
-                                            </div>
-                                        </div>
-                                    </div>
-                                </li>
-                                <li class="event-list">
-                                    <div class="event-timeline-dot">
-                                        <i class="material-icons md-play_circle_outline font-xxl"></i>
-                                    </div>
-                                    <div class="media">
-                                        <div class="me-3">
-                                            <h6><span>13 May</span> <i class="material-icons md-trending_flat text-brand ml-15 d-inline-block"></i></h6>
-                                        </div>
-                                        <div class="media-body">
-                                            <div>
-                                                Accusamus voluptatibus voluptas.
-                                            </div>
-                                        </div>
-                                    </div>
-                                </li>
-                                <li class="event-list">
-                                    <div class="event-timeline-dot">
-                                        <i class="material-icons md-play_circle_outline font-xxl"></i>
-                                    </div>
-                                    <div class="media">
-                                        <div class="me-3">
-                                            <h6><span>05 April</span> <i class="material-icons md-trending_flat text-brand ml-15 d-inline-block"></i></h6>
-                                        </div>
-                                        <div class="media-body">
-                                            <div>
-                                                At vero eos et accusamus et iusto odio dignissi
-                                            </div>
-                                        </div>
-                                    </div>
-                                </li>
-                                <li class="event-list">
-                                    <div class="event-timeline-dot">
-                                        <i class="material-icons md-play_circle_outline font-xxl"></i>
-                                    </div>
-                                </li>
-                            </ul>
+                            <h5 class="card-title">Monthly Sales Report</h5>
+                            <canvas id="monthlyChart"></canvas>
+                        </article>
+                    </div>
+                </div>
+                <!-- Yearly Sales Report -->
+                <div class="tab-pane fade" id="yearly_report" role="tabpanel" aria-labelledby="yearly_report-tab">
+                    <div class="card mb-4">
+                        <article class="card-body">
+                            <h5 class="card-title">Yearly Sales Report</h5>
+                            <canvas id="yearlyChart"></canvas>
                         </article>
                     </div>
                 </div>
             </div>
         </div>
-        <div class="col-xl-4 col-lg-12">
-            <div class="card mb-4">
+
+        <!-- Order Status -->
+        <div class="col-md-4">
+            <div class="card">
                 <article class="card-body">
-                    <h5 class="card-title">Marketing Chanel</h5>
-                    <span class="text-muted font-xs">Facebook</span>
-                    <div class="progress mb-3">
-                        <div class="progress-bar" role="progressbar" style="width: 15%">15%</div>
-                    </div>
-                    <span class="text-muted font-xs">Instagram</span>
-                    <div class="progress mb-3">
-                        <div class="progress-bar" role="progressbar" style="width: 65%">65% </div>
-                    </div>
-                    <span class="text-muted font-xs">Google</span>
-                    <div class="progress mb-3">
-                        <div class="progress-bar" role="progressbar" style="width: 51%"> 51% </div>
-                    </div>
-                    <span class="text-muted font-xs">Twitter</span>
-                    <div class="progress mb-3">
-                        <div class="progress-bar" role="progressbar" style="width: 80%"> 80%</div>
-                    </div>
-                    <span class="text-muted font-xs">Other</span>
-                    <div class="progress mb-3">
-                        <div class="progress-bar" role="progressbar" style="width: 80%"> 80%</div>
-                    </div>
+                    <h5 class="card-title">Order Status</h5>
+                    <canvas id="orderStatusChart"></canvas>
                 </article>
+            </div>
+        </div>
+        
+        <!-- Best Selling Products -->
+        <div class="card mb-4">
+            <header class="card-header">
+                <h4 class="card-title">Best Selling Products (Top 5)</h4>
+            </header>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Product Name</th>
+                                <th>Total Quantity Sold</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for product in best_selling_products %}
+                            <tr>
+                                <td>{{ product.product_variant__product__title }}</td>
+                                <td>{{ product.total_quantity }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Best Selling Categories -->
+        <div class="card mb-4">
+            <header class="card-header">
+                <h4 class="card-title">Best Selling Categories (Top 5)</h4>
+            </header>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Category Name</th>
+                                <th>Total Quantity Sold</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for category in best_selling_categories %}
+                            <tr>
+                                <td>{{ category.product_variant__product__category__name }}</td>
+                                <td>{{ category.total_quantity }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Best Selling Brands -->
+        <div class="card mb-4">
+            <header class="card-header">
+                <h4 class="card-title">Best Selling Brands (Top 5)</h4>
+            </header>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Brand Name</th>
+                                <th>Total Quantity Sold</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for brand in best_selling_brands %}
+                            <tr>
+                                <td>{{ brand.product_variant__product__brand__name }}</td>
+                                <td>{{ brand.total_quantity }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+    <!-- Latest Orders -->
+    <div class="card mb-4">
+        <header class="card-header">
+            <h4 class="card-title">Latest 5 Orders</h4>
+        </header>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>#ID</th>
+                            <th>Name</th>
+                            <th>Email</th>
+                            <th>Total</th>
+                            <th>Status</th>
+                            <th>Date</th>
+                            <th class="text-end">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for order in last_orders %}
+                        <tr>
+                            <td>{{ order.order_id }}</td>
+                            <td><b>{{ order.user.username }}</b></td>
+                            <td>{{ order.user.email }}</td>
+                            <td>₹{{ order.order_total }}</td>
+                            <td>
+                                <span class="badge rounded-pill 
+                                    {% if order.status == 'Confirmed' %} bg-primary 
+                                    {% elif order.status == 'Shipped' %} bg-info 
+                                    {% elif order.status == 'Delivered' %} bg-success 
+                                    {% elif order.status == 'Cancelled' %} bg-danger 
+                                    {% else %} bg-secondary 
+                                    {% endif %}">
+                                    {{ order.status }}
+                                </span>
+                            </td>
+                            <td>{{ order.created_at }}</td>
+                            <td class="text-end">
+                                <a href="{% url 'adminlog:order_details' order.id %}" class="btn btn-sm btn-light">View</a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
             </div>
         </div>
     </div>
 </section>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    // Daily Sales Report
+    const date = {{ dates|safe }};
+    const count = {{ counts|safe }};
+    const ctx = document.getElementById('myChart');
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: date,
+            datasets: [{
+                label: 'Daily Sales Report',
+                data: count,
+                borderColor: '#007bff',
+                borderWidth: 2,
+                fill: false
+            }]
+        },
+        options: {
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+
+    // Monthly Sales Report
+    const monthlydates = {{ monthlyDates|safe }};
+    const monthlycounts = {{ monthlyCounts|safe }};
+    const mctx = document.getElementById('monthlyChart');
+    new Chart(mctx, {
+        type: 'line',
+        data: {
+            labels: monthlydates,
+            datasets: [{
+                label: 'Monthly Sales Report',
+                data: monthlycounts,
+                borderColor: '#28a745',
+                borderWidth: 2,
+                fill: false
+            }]
+        },
+        options: {
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+
+    // Yearly Sales Report
+    const yearlydates = {{ yearlyDates|safe }};
+    const yearlycounts = {{ yearlyCounts|safe }};
+    const yctx = document.getElementById('yearlyChart');
+    new Chart(yctx, {
+        type: 'line',
+        data: {
+            labels: yearlydates,
+            datasets: [{
+                label: 'Yearly Sales Report',
+                data: yearlycounts,
+                borderColor: '#ffc107',
+                borderWidth: 2,
+                fill: false
+            }]
+        },
+        options: {
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+
+    // Order Status
+    const orders = {{ orderCounts|safe }};
+    const statusLabels = {{ statusLabels|safe }};
+    const octx = document.getElementById('orderStatusChart');
+    new Chart(octx, {
+        type: 'doughnut',
+        data: {
+            labels: statusLabels,
+            datasets: [{
+                label: 'Order Status',
+                data: orders,
+                backgroundColor: ['#007bff', '#28a745', '#ffc107', '#dc3545'],
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true
+        }
+    });
+</script>
 {% endblock %}

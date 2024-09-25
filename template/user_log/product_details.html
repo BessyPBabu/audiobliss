@@ -1,6 +1,6 @@
 {% extends 'user_log/baseuser.html' %}
 
-{% block title %}Audio Bliss - Product Deatils{% endblock %}
+{% block title %}Audio Bliss - Product Details{% endblock %}
 
 {% block body %}
 {% load static %}
@@ -17,8 +17,8 @@
 
 .product-image-slider img {
     width: 100%;
-    height: auto;
-    object-fit: cover;
+    height: 600px;
+    object-fit: contain;
 }
 
 .slider-nav-thumbnails {
@@ -38,6 +38,11 @@
 .slider-nav-thumbnails img.active {
     border-color: #333; /* Highlight border for active thumbnail */
 }
+
+.wishlist-active {
+    color: red !important;
+}
+
 </style>
 
 {% endblock %}
@@ -102,7 +107,7 @@
                                 <h2 class="title-detail">{{ product.title }}</h2>
                                 <div class="product-detail-rating">
                                     <div class="pro-details-brand">
-                                        <span> Brands: <a href="shop-grid-right.html">{{ product.brand_name }}</a></span>
+                                        <span> Brands: <a href="shop-grid-right.html">{{ product.brand }}</a></span>
                                     </div>
                                     <div class="product-rate-cover text-end">
                                         <div class="product-rate d-inline-block">
@@ -114,11 +119,27 @@
                                 </div>
                                 <div class="clearfix product-price-cover">
                                     <div class="product-price primary-color float-left">
-                                        <ins><span class="text-brand">&#8377;{{product.variants.first.price }}</span></ins>
-                                        <!-- <ins><span class="old-price font-md ml-15">&#8377;200.00</span></ins>
-                                        <span class="save-price  font-md color3 ml-15">25% Off</span> -->
+                                        <ins>
+                                            <!-- Display the discounted price if a discount is available -->
+                                            <span class="text-brand" id="variant-price">
+                                                &#8377;{{ discounted_price|floatformat:2 }}
+                                            </span>
+                                        </ins>
+                                        <!-- Display the original price as strikethrough if a discount is available -->
+                                        {% if discount_percentage > 0 %}
+                                            <ins>
+                                                <span class="old-price font-md ml-15" id="variant-old-price">
+                                                    &#8377;{{ original_price|floatformat:2 }}
+                                                </span>
+                                            </ins>
+                                            <!-- Display the discount percentage -->
+                                            <span class="save-price font-md color3 ml-15" id="variant-discount">
+                                                Save {{ discount_percentage|floatformat:0 }}%
+                                            </span>
+                                        {% endif %}
                                     </div>
                                 </div>
+                                
                                 <div class="bt-1 border-color-1 mt-15 mb-15"></div>
                                 <div class="short-desc mb-30">
                                     <p>{{product.description}}</p>
@@ -137,6 +158,10 @@
                                             <li class="{% if forloop.first %}active{% endif %}" 
                                             data-color="{{ variant.color.name }}" 
                                             data-variant-id="{{ variant.id }}"
+                                            data-price="{{ variant.price }}"
+                                            data-offer-price="{{ variant.offer_price }}"
+                                            data-max-quantity="{{ variant.max_quantity_per_user }}"
+                                            data-stock="{{ variant.stock }}"
                                             data-images="{% if variant.image1 %}{{ variant.image1.url }}{% endif %},{% if variant.image2 %}{{ variant.image2.url }}{% endif %},{% if variant.image3 %}{{ variant.image3.url }}{% endif %}">
                                                 <a href="#" data-color="{{ variant.color.name }}">
                                                     <span class="product-color" style="background-color: {{ variant.color.hex_code }};"></span>
@@ -148,13 +173,11 @@
                                
                                 <div class="bt-1 border-color-1 mt-30 mb-30"></div>
                                 <div class="detail-extralink">
-                                    <p id="maxQuantity">Max per person: {{ selected_variant.max_quantity_per_user }}</p>
-                                    
-                                    
+                                    <p id="maxQuantity">Max per person: <span id="max-quantity-display">{{ selected_variant.max_quantity_per_user }}</span></p>
                                     <div class="product-extra-link2">
                                         <button type="submit" class="add-to-cart button-add-to-cart">Add to cart</button>
-                                        <a aria-label="Add To Wishlist" class="action-btn hover-up" href="shop-wishlist.html"><i class="fi-rs-heart"></i></a>
-                                        <a aria-label="Compare" class="action-btn hover-up" href="shop-compare.html"><i class="fi-rs-shuffle"></i></a>
+                                        <a aria-label="Add To Wishlist" class="action-btn hover-up add-to-wishlist {% if item.product_variant.id in wishlist_variant_ids %}wishlist-active {% endif %}" data-product-variant-id="{{ item.product_variant.id }}" href="#"><i class="fi-rs-heart"></i></a>
+
                                     </div>
                                 </div>
                                 <ul class="product-meta font-xs color-grey mt-50">
@@ -169,26 +192,6 @@
                             <h2 class="section-title style-1 mb-30">Description</h2>
                             <div class="description mb-50">
                                 <p>{{product.description}}</p>
-                                
-                                <ul class="product-more-infor mt-30">
-                                    <li><span>Type Of Packing</span> Bottle</li>
-                                    <li><span>Color</span> Green, Pink, Powder Blue, Purple</li>
-                                    <li><span>Quantity Per Case</span> 100ml</li>
-                                    <li><span>Ethyl Alcohol</span> 70%</li>
-                                    <li><span>Piece In One</span> Carton</li>
-                                </ul>
-                                <hr class="wp-block-separator is-style-dots">
-                                <p>Laconic overheard dear woodchuck wow this outrageously taut beaver hey hello far meadowlark imitatively egregiously hugged that yikes minimally unanimous pouted flirtatiously as beaver beheld above forward
-                                    energetic across this jeepers beneficently cockily less a the raucously that magic upheld far so the this where crud then below after jeez enchanting drunkenly more much wow callously irrespective limpet.</p>
-                                <h4 class="mt-30">Packaging & Delivery</h4>
-                                <hr class="wp-block-separator is-style-wide">
-                                <p>Less lion goodness that euphemistically robin expeditiously bluebird smugly scratched far while thus cackled sheepishly rigid after due one assenting regarding censorious while occasional or this more crane
-                                    went more as this less much amid overhung anathematic because much held one exuberantly sheep goodness so where rat wry well concomitantly.
-                                </p>
-                                <p>Scallop or far crud plain remarkably far by thus far iguana lewd precociously and and less rattlesnake contrary caustic wow this near alas and next and pled the yikes articulate about as less cackled dalmatian
-                                    in much less well jeering for the thanks blindly sentimental whimpered less across objectively fanciful grimaced wildly some wow and rose jeepers outgrew lugubrious luridly irrationally attractively
-                                    dachshund.
-                                </p>
                             </div>
                             <div class="social-icons single-share">
                                 <ul class="text-grey-5 d-inline-block">
@@ -199,112 +202,9 @@
                                     <li class="social-linkedin"><a href="#"><img src="{% static 'user/imgs/theme/icons/icon-pinterest.svg' %}" alt=""></a></li>
                                 </ul>
                             </div>
-                            <h3 class="section-title style-1 mb-30 mt-30">Reviews (3)</h3>
-                            <!--Comments-->
-                            <div class="comments-area style-2">
-                                <div class="row">
-                                    <div class="col-lg-8">
-                                        <h4 class="mb-30">Customer questions & answers</h4>
-                                        <div class="comment-list">
-                                            <div class="single-comment justify-content-between d-flex">
-                                                <div class="user justify-content-between d-flex">
-                                                    <div class="thumb text-center">
-                                                        <img src="{% static 'user/imgs/page/avatar-6.jpg' %}" alt="">
-                                                        <h6><a href="#">Jacky Chan</a></h6>
-                                                        <p class="font-xxs">Since 2012</p>
-                                                    </div>
-                                                    <div class="desc">
-                                                        <div class="product-rate d-inline-block">
-                                                            <div class="product-rating" style="width:90%">
-                                                            </div>
-                                                        </div>
-                                                        <p>Thank you very fast shipping from Poland only 3days.</p>
-                                                        <div class="d-flex justify-content-between">
-                                                            <div class="d-flex align-items-center">
-                                                                <p class="font-xs mr-30">December 4, 2020 at 3:12 pm </p>
-                                                                <a href="#" class="text-brand btn-reply">Reply <i class="fi-rs-arrow-right"></i> </a>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                         
-                                            <!--single-comment -->
-                                        </div>
-                                    </div>
-                                    <div class="col-lg-4">
-                                        <h4 class="mb-30">Customer reviews</h4>
-                                        <div class="d-flex mb-30">
-                                            <div class="product-rate d-inline-block mr-15">
-                                                <div class="product-rating" style="width:90%">
-                                                </div>
-                                            </div>
-                                            <h6>4.8 out of 5</h6>
-                                        </div>
-                                        <div class="progress">
-                                            <span>5 star</span>
-                                            <div class="progress-bar" role="progressbar" style="width: 50%;" aria-valuenow="50" aria-valuemin="0" aria-valuemax="100">50%</div>
-                                        </div>
-                                        <div class="progress">
-                                            <span>4 star</span>
-                                            <div class="progress-bar" role="progressbar" style="width: 25%;" aria-valuenow="25" aria-valuemin="0" aria-valuemax="100">25%</div>
-                                        </div>
-                                        <div class="progress">
-                                            <span>3 star</span>
-                                            <div class="progress-bar" role="progressbar" style="width: 45%;" aria-valuenow="45" aria-valuemin="0" aria-valuemax="100">45%</div>
-                                        </div>
-                                        <div class="progress">
-                                            <span>2 star</span>
-                                            <div class="progress-bar" role="progressbar" style="width: 65%;" aria-valuenow="65" aria-valuemin="0" aria-valuemax="100">65%</div>
-                                        </div>
-                                        <div class="progress mb-30">
-                                            <span>1 star</span>
-                                            <div class="progress-bar" role="progressbar" style="width: 85%;" aria-valuenow="85" aria-valuemin="0" aria-valuemax="100">85%</div>
-                                        </div>
-                                        <a href="#" class="font-xs text-muted">How are ratings calculated?</a>
-                                    </div>
-                                </div>
-                            </div>
-                            <!--comment form-->
-                            <div class="comment-form">
-                                <h4 class="mb-15">Add a review</h4>
-                                <div class="product-rate d-inline-block mb-30">
-                                </div>
-                                <div class="row">
-                                    <div class="col-lg-8 col-md-12">
-                                        <form class="form-contact comment_form" action="#" id="commentForm">
-                                            <div class="row">
-                                                <div class="col-12">
-                                                    <div class="form-group">
-                                                        <textarea class="form-control w-100" name="comment" id="comment" cols="30" rows="9" placeholder="Write Comment"></textarea>
-                                                    </div>
-                                                </div>
-                                                <div class="col-sm-6">
-                                                    <div class="form-group">
-                                                        <input class="form-control" name="name" id="name" type="text" placeholder="Name">
-                                                    </div>
-                                                </div>
-                                                <div class="col-sm-6">
-                                                    <div class="form-group">
-                                                        <input class="form-control" name="email" id="email" type="email" placeholder="Email">
-                                                    </div>
-                                                </div>
-                                                <div class="col-12">
-                                                    <div class="form-group">
-                                                        <input class="form-control" name="website" id="website" type="text" placeholder="Website">
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            <div class="form-group">
-                                                <button type="submit" class="button button-contactForm">Submit
-                                                    Review</button>
-                                            </div>
-                                        </form>
-                                    </div>
-                                </div>
-                            </div>
                         </div>
                     </div>
+                            
                     <div class="row mt-60">
                         <div class="col-12">
                             <h3 class="section-title style-1 mb-30">Related Products</h3>
@@ -351,6 +251,7 @@
                                                 {% else %}
                                                     <span>Price not available</span>
                                                 {% endif %}
+                                                
                                             </div>
                                             <div class="product-action-1 show">
                                                 {% if similar_product.variants.exists %}
@@ -376,105 +277,166 @@
 
 {% block extra_js %}
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-<script>
-    $(document).ready(function() {
-    // Color variant selection handler
-    $('.color-filter li').click(function() {
-        // Remove active class from all color options
-        $('.color-filter li').removeClass('active');
 
-        // Add active class to the clicked color option
-        $(this).addClass('active');
+<!-- Add Toastify CSS -->
+<link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
 
-        // Get the image URLs from the selected color variant
-        var imageUrls = $(this).data('images').split(',');
+<!-- Add Toastify JS -->
+<script type="text/javascript" src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
 
-        // Update the main product image
-        var $imageSlider = $('.product-image-slider');
-        $imageSlider.empty(); // Clear current images
-
-        // Add new images
-        imageUrls.forEach(function(url) {
-            if (url) {
-                $imageSlider.append('<figure class="border-radius-10"><img src="' + url + '" alt="Product Image"></figure>');
-            }
-        });
-
-        // Update thumbnails as well
-        var $thumbnailSlider = $('.slider-nav-thumbnails');
-        $thumbnailSlider.empty(); // Clear current thumbnails
-
-        // Add new thumbnails
-        imageUrls.forEach(function(url) {
-            if (url) {
-                $thumbnailSlider.append('<div><img src="' + url + '" alt="Product Thumbnail"></div>');
-            }
-        });
-    });
-
-    // Add to Cart handler
-    $('.add-to-cart').click(function(e) {
-        e.preventDefault();
-
-        var selectedColor = $('.color-filter li.active');
-        var productVariantId = selectedColor.data('variant-id');
-
-        // Check if a color variant is selected
-        if (!productVariantId) {
-            alert('Please select a color variant first.');
-            return;
-        }
-
-        $.ajax({
-            url: '{% url "cart:add_to_cart" %}',
-            type: 'POST',
-            data: {
-                'product_variant_id': productVariantId,
-                'quantity': 1,
-                'csrfmiddlewaretoken': '{{ csrf_token }}'
-            },
-            dataType: 'json',
-            success: function(response) {
-                if (response.success) {
-                    alert('Product added to cart successfully!');
-                } else {
-                    alert(response.error || 'Error adding product to cart');
-                }
-            },
-            error: function(xhr, errmsg, err) {
-                if (xhr.status === 404) {
-                    alert('Product not found');
-                } else {
-                    alert('Network error. Please try again later.');
-                }
-            }
-        });
-    });
-});
-
-</script>
 <!-- Add Swiper CSS -->
 <link rel="stylesheet" href="https://unpkg.com/swiper/swiper-bundle.min.css" />
 
 <!-- Add Swiper JS -->
 <script src="https://unpkg.com/swiper/swiper-bundle.min.js"></script>
 
+<!-- Your Custom Script -->
 <script>
-  var swiper = new Swiper('.product-image-slider', {
-    spaceBetween: 10,
-    slidesPerView: 1,
-    navigation: {
-      nextEl: '.swiper-button-next',
-      prevEl: '.swiper-button-prev',
-    },
-    thumbs: {
-      swiper: {
-        el: '.slider-nav-thumbnails',
-        slidesPerView: 4,
-      }
-    }
-  });
+    $(document).ready(function() {
+        // Color variant selection handler
+        $('.color-filter li').click(function() {
+            // Remove active class from all color options
+            $('.color-filter li').removeClass('active');
+
+            // Add active class to the clicked color option
+            $(this).addClass('active');
+
+            // Get the image URLs from the selected color variant
+            var imageUrls = $(this).data('images').split(',');
+
+            // Update the main product image
+            var $imageSlider = $('.product-image-slider');
+            $imageSlider.empty(); // Clear current images
+
+            // Add new images
+            imageUrls.forEach(function(url) {
+                if (url) {
+                    $imageSlider.append('<figure class="border-radius-10"><img src="' + url + '" alt="Product Image"></figure>');
+                }
+            });
+
+            // Update thumbnails as well
+            var $thumbnailSlider = $('.slider-nav-thumbnails');
+            $thumbnailSlider.empty(); // Clear current thumbnails
+
+            // Add new thumbnails
+            imageUrls.forEach(function(url) {
+                if (url) {
+                    $thumbnailSlider.append('<div><img src="' + url + '" alt="Product Thumbnail"></div>');
+                }
+            });
+        });
+
+        // Add to Cart handler
+        $('.add-to-cart').click(function(e) {
+            e.preventDefault();
+
+            var selectedColor = $('.color-filter li.active');
+            var productVariantId = selectedColor.data('variant-id');
+
+            // Check if a color variant is selected
+            if (!productVariantId) {
+                showToast('Please select a color variant first.', 'error');
+                return;
+            }
+
+            $.ajax({
+                url: '{% url "cart:add_to_cart" %}',
+                type: 'POST',
+                data: {
+                    'product_variant_id': productVariantId,
+                    'quantity': 1,
+                    'csrfmiddlewaretoken': '{{ csrf_token }}'
+                },
+                dataType: 'json',
+                success: function(response) {
+                    if (response.success) {
+                        showToast('Product added to cart successfully!', 'success');
+                        // Update cart total and item count in the UI
+                        $('#cart-total').text(response.cart_total);
+                        $('#cart-item-count').text(response.item_count);
+                    } else {
+                        showToast(response.error || 'Maximum products per user limit exceeded!', 'error');
+                    }
+                },
+                error: function(xhr, errmsg, err) {
+                    var errorMessage = xhr.responseJSON ? xhr.responseJSON.error : 'Maximum products per user limit exceeded!';
+                    showToast('Error: ' + errorMessage, 'error');
+                }
+            });
+        });
+
+        $('.add-to-wishlist').click(function(e) {
+            e.preventDefault();
+
+            var selectedColor = $('.color-filter li.active');
+            var productVariantId = selectedColor.data('variant-id');
+
+            // Check if a color variant is selected
+            if (!productVariantId) {
+                showToast('Please select a color variant first.', 'error');
+                return;
+            }
+
+            $.ajax({
+                url: '{% url "cart:toggle_wishlist" %}',
+                type: 'POST',
+                data: {
+                    'product_variant_id': productVariantId,
+                    'csrfmiddlewaretoken': '{{ csrf_token }}'
+                },
+                dataType: 'json',
+                success: function(response) {
+                    showToast(response.message, response.success ? 'success' : 'error');
+
+                    // Toggle the wishlist button status (e.g., change heart icon color)
+                    if (response.message.includes('added')) {
+                        // Change to active state, e.g., highlight the heart icon
+                        $('.add-to-wishlist').addClass('wishlist-active');
+                    } else {
+                        // Revert to inactive state
+                        $('.add-to-wishlist').removeClass('wishlist-active');
+                    }
+                },
+                error: function(xhr, errmsg, err) {
+                    showToast('An error occurred while processing the wishlist request.', 'error');
+                }
+            });
+        });
+
+
+        function showToast(message, type) {
+            var backgroundColor = type === 'success' ? '#4CAF50' : '#F44336';
+            
+            Toastify({
+                text: message,
+                duration: 3000,
+                close: true,
+                gravity: "top",
+                position: "right",
+                backgroundColor: backgroundColor,
+                stopOnFocus: true
+            }).showToast();
+        }
+    });
+
+    // Initialize Swiper for product images
+    var swiper = new Swiper('.product-image-slider', {
+        spaceBetween: 10,
+        slidesPerView: 1,
+        navigation: {
+            nextEl: '.swiper-button-next',
+            prevEl: '.swiper-button-prev',
+        },
+        thumbs: {
+            swiper: {
+                el: '.slider-nav-thumbnails',
+                slidesPerView: 4,
+            }
+        }
+    });
 </script>
+
 
 {% endblock %}
 {% endblock %}

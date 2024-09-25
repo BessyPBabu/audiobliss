@@ -17,34 +17,52 @@
                     <th>Date</th>
                     <th>Total</th>
                     <th>Status</th>
+                    <th>Payment Method</th>
                     <th>Actions</th>
                 </tr>
             </thead>
             <tbody>
                 {% for order in orders %}
+                {% if order.order_id %}
                     <tr>
                         <td>{{ order.order_id }}</td>
                         <td>{{ order.created_at|date:"d M Y" }}</td>
                         <td>{{ order.order_total }}</td>
                         <td>{{ order.get_status_display }}</td>
                         <td>
+                            {% if order.payment %}
+                                {{ order.payment.payment_method }}
+                            {% else %}
+                                Not Available
+                            {% endif %}
+                        </td>
+                        <td>
                             <a href="{% url 'userlog:order_details' order.id %}" class="btn btn-info btn-sm">View</a>
-                            {% if order.status == 'New' %}
+                            {% if order.status in 'New Confirmed' %}
                                 <form action="{% url 'userlog:cancel_order' order.id %}" method="post" style="display:inline;">
                                     {% csrf_token %}
                                     <button type="submit" class="btn btn-danger btn-sm">Cancel</button>
                                 </form>
+                            {% elif order.status == 'Cancelled' and not order.is_ordered %}
+                                <a href="{% url 'cart:checkout' %}" class="btn btn-primary btn-sm">Pay Again</a>
+                            {% elif order.status == 'New' and not order.is_ordered %}
+                                <a href="{% url 'cart:checkout' %}" class="btn btn-primary btn-sm">Pay Again</a>
                             {% elif order.status == 'Delivered' %}
                                 <form action="{% url 'userlog:return_order' order.id %}" method="post" style="display:inline;">
                                     {% csrf_token %}
                                     <button type="submit" class="btn btn-warning btn-sm">Return</button>
                                 </form>
+                            {% elif order.status == 'Payment Pending' %}
+                                <a href="{% url 'cart:repay_order' order.id %}" class="btn btn-primary btn-sm">Pay Again</a>
                             {% endif %}
+                            <a href="{% url 'orders:invoice' order_id=order.id %}" class="btn btn-primary btn-sm"> Invoice</a>
                         </td>
                     </tr>
+                    {% endif %}
                 {% endfor %}
             </tbody>
         </table>
     </div>
 </div>
+
 {% endblock %}

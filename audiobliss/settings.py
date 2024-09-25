@@ -48,6 +48,8 @@ INSTALLED_APPS = [
     'product_management',
     'cart',
     'orders',
+    'offer_management',
+    'coupon',
 ]
 
 MIDDLEWARE = [
@@ -124,11 +126,14 @@ SOCIALACCOUNT_PROVIDERS = {
             'email',
         ],
         'AUTH_PARAMS': {
-            'access_type': 'offline',
-            'prompt': 'select_account consent',
+            'access_type': 'online',
+            'prompt': 'none'
         }
     }
 }
+
+SOCIALACCOUNT_LOGIN_ON_GET = True
+
 
 ACCOUNT_EMAIL_REQUIRED = True
 ACCOUNT_EMAIL_VERIFICATION = "mandatory"
@@ -227,3 +232,10 @@ SESSION_ENGINE = 'django.contrib.sessions.backends.db'
 
 # Custom session engine for admin panel
 ADMIN_SESSION_ENGINE = 'django.contrib.sessions.backends.db'  # This should be configured separately if using a different engine
+
+
+# settings.py
+
+RAZORPAY_KEY_ID = 'rzp_test_UwresUeE2YSHhX'
+RAZORPAY_KEY_SECRET = '9CS7FEZEVzqVQmAgRhMHE08o'
+SECURE_CROSS_ORIGIN_OPENER_POLICY = "same-origin-allow-popups"

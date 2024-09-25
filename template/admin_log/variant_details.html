@@ -12,7 +12,7 @@
         <div class="content-header">
             <div>
                 <h2 class="content-title card-title">Manage - Product Variants </h2>
-                <p>add,edit or delete a variants</p>
+                <p>Add, edit or delete a variant</p>
             </div>
         </div>
         {% if messages %}
@@ -50,6 +50,14 @@
                                 </div>
                                 <div class="price mb-2">Price: &#8377;{{ variant.price }}</div>
                                 <div class="price mb-2">Stock: {{ variant.stock }}</div>
+                                <!-- Active Status -->
+                                <div class="mb-2">
+                                    {% if variant.is_active %}
+                                        <span class="badge bg-success">Active</span>
+                                    {% else %}
+                                        <span class="badge bg-danger">Inactive</span>
+                                    {% endif %}
+                                </div>
                                 <div class="btn-group">
                                     <a href="{% url 'product_det:edit_variant' variant_id=variant.id %}" class="btn btn-sm font-sm rounded btn-brand">
                                         <i class="material-icons md-edit"></i> Edit
@@ -66,7 +74,38 @@
                         </div>
                     </div>
                     {% endfor %}
+                    
                 </div>
+                <div class="pagination-area mt-15 mb-sm-5 mb-lg-0">
+                    <nav aria-label="Page navigation example">
+                        <ul class="pagination justify-content-start">
+                            {% if variants.has_previous %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ variants.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if selected_category %}&category={{ selected_category }}{% endif %}{% if sort_by %}&sort_by={{ sort_by }}{% endif %}">
+                                        <i class="fi-rs-angle-double-small-left"></i>
+                                    </a>
+                                </li>
+                            {% endif %}
+                
+                            {% for num in variants.paginator.page_range %}
+                                {% if variants.number == num %}
+                                    <li class="page-item active"><a class="page-link" href="#">{{ num }}</a></li>
+                                {% else %}
+                                    <li class="page-item"><a class="page-link" href="?page={{ num }}{% if search_query %}&search={{ search_query }}{% endif %}{% if selected_category %}&category={{ selected_category }}{% endif %}{% if sort_by %}&sort_by={{ sort_by }}{% endif %}">{{ num }}</a></li>
+                                {% endif %}
+                            {% endfor %}
+                
+                            {% if variants.has_next %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ variants.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if selected_category %}&category={{ selected_category }}{% endif %}{% if sort_by %}&sort_by={{ sort_by }}{% endif %}">
+                                        <i class="fi-rs-angle-double-small-right"></i>
+                                    </a>
+                                </li>
+                            {% endif %}
+                        </ul>
+                    </nav>
+                </div>
+                
             </div>
         </div>
     </div>

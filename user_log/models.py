@@ -16,6 +16,8 @@ class Account(AbstractBaseUser, PermissionsMixin):
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
     is_superuser = models.BooleanField(default=False)
+    new_email = models.EmailField(null=True, blank=True)
+    is_new_email_verified = models.BooleanField(default=False)
    
 
     USERNAME_FIELD = 'email'
@@ -31,6 +33,47 @@ class Account(AbstractBaseUser, PermissionsMixin):
 
     def has_module_perms(self, app_label):
         return True
+    
+    def get_available_referral_offers(self):
+        from offer_management.models import ReferralOffer
+        return ReferralOffer.objects.filter(
+            referred=self, 
+            is_claimed=False, 
+            offer__is_active=True,
+            offer__start_date__lte=models.functions.Now(),
+            offer__end_date__gte=models.functions.Now()
+        )
+
+    def apply_referral_offer(self, referrer):
+        from offer_management.models import ReferralOffer
+        referral_offer = ReferralOffer.objects.filter(
+            referred=self, 
+            referrer=referrer, 
+            is_claimed=False, 
+            offer__is_active=True,
+            offer__start_date__lte=models.functions.Now(),
+            offer__end_date__gte=models.functions.Now()
+        ).first()
+        
+        if referral_offer:
+            referral_offer.is_claimed = True
+            referral_offer.save()
+            # Apply the discount or reward to the new user and/or referrer
+            # You might want to implement this logic based on your specific requirements
+            return True
+        return False
+
+    def has_active_referral_offer(self):
+        return self.get_available_referral_offers().exists()
+    
+    def verify_new_email(self):
+        # If the new email is verified, set the new email as the current email
+        if self.is_new_email_verified:
+            self.email = self.new_email
+            self.new_email = None
+            self.is_new_email_verified = False
+            self.save()
+
     
 class OTP(models.Model):
     user = models.ForeignKey(Account, on_delete=models.CASCADE)
@@ -58,3 +101,20 @@ class Address(models.Model):
 
     def __str__(self):
         return f"{self.house_name}, {self.streat_name}, {self.place}"
+    
+
+class Wallet(models.Model):
+    user = models.OneToOneField(Account, on_delete=models.CASCADE)
+    balance = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+
+    def __str__(self):
+        return f"{self.user.username}'s Wallet"
+
+class WalletHistory(models.Model):
+    wallet = models.ForeignKey(Wallet, on_delete=models.CASCADE)
+    type = models.CharField(null=True, blank=True, max_length=20)
+    created_at = models.DateTimeField(auto_now_add=True)
+    amount = models.DecimalField(max_digits=10, decimal_places=2)
+
+    def __str__(self):
+        return f"{self.wallet.user.username} - {self.type} - ₹{self.amount}"

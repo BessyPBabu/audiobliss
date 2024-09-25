@@ -1,0 +1,70 @@
+{% extends 'user_log/baseuser.html' %}
+
+{% block title %}Audio Bliss - Wallet{% endblock %}
+
+{% load static %}
+
+{% block body %}
+<div class="container mt-4">
+    <h2 class="mb-4">My Wallet</h2>
+    
+    <div class="card">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">Wallet Overview</h5>
+        </div>
+        <div class="card-body">
+            <div class="row align-items-center">
+                <div class="col-lg-4">
+                    <div class="card bg-light text-center">
+                        <div class="card-body">
+                            <h4 class="mb-3 font-weight-bold">Wallet Balance</h4>
+                            <h2 class="text-primary font-weight-bold">₹{{ balance }}</h2>
+                            <small class="text-muted">Available Balance</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-8">
+                    <div class="alert alert-info">
+                        <h5 class="font-weight-bold">How to Use Your Wallet</h5>
+                        <p>You can use your wallet balance during checkout to pay for your orders. The amount will be automatically deducted from your total.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card mt-4">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">Transaction History</h5>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead class="thead-light">
+                        <tr>
+                            <th>Date</th>
+                            <th>Type</th>
+                            <th>Amount</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for history in wallethistory %}
+                        <tr>
+                            <td>{{ history.created_at|date:"SHORT_DATETIME_FORMAT" }}</td>
+                            <td>{{ history.type|capfirst }}</td>
+                            <td class="{% if history.type == 'Refund' %}text-success{% else %}text-danger{% endif %}">
+                                {% if history.type == 'Refund' %}+{% elif history.type == 'Wallet Payment' %}-{% else %}-{% endif %}₹{{ history.amount }}
+                            </td>
+                        </tr>
+                    {% empty %}
+                        <tr>
+                            <td colspan="3" class="text-center text-muted">No transactions available.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

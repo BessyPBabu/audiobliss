@@ -5,6 +5,7 @@
 {% block body %}
 {% load static %}
 
+
 <style>
     .main-heading {
         background-color: #ffff66;
@@ -59,6 +60,7 @@
                             <thead class="main-heading">
                                 <tr>
                                     <th colspan="2">Product</th>
+                                    <th>price </th>
                                     <th>Total</th>
                                 </tr>
                             </thead>
@@ -73,29 +75,41 @@
                                         <span class="product-qty">Color: {{ item.product_variant.color.name }}</span><br>
                                         <span class="product-qty">x {{ item.quantity }}</span>
                                     </td>
-                                    <td>&#8377;{{ item.subtotal }}</td>
+                                    <td>
+                                        {% if item.price_at_addition != item.product_variant.price %}
+                                            <del>&#8377;{{ item.product_variant.price }}</del>
+                                            <span class="text-brand">&#8377;{{ item.price_at_addition }}</span>
+                                        {% else %}
+                                            &#8377;{{ item.product_variant.price }}
+                                        {% endif %}
+                                    </td>
+                                    <td>&#8377;{{item.subtotal|floatformat:2 }}</td>
                                 </tr>
                                 {% empty %}
                                 <tr>
-                                    <td colspan="3">No items in your cart.</td>
+                                    <td colspan="4">No items in your cart.</td>
                                 </tr>
                                 {% endfor %}
                                 <tr>
-                                    <th>SubTotal</th>
-                                    <td class="product-subtotal" colspan="2">&#8377;{{ cart_total }}</td>
-                                </tr>
-                                <tr>
-                                    <th>Shipping</th>
-                                    <td colspan="2"><em>Free Shipping</em></td>
+                                    <th>Cart Total</th>
+                                    <td class="product-subtotal" colspan="3">&#8377;{{ cart_total }}</td>
                                 </tr>
                                 <tr>
                                     <th>Total</th>
-                                    <td colspan="2" class="product-subtotal">
-                                        <span class="font-xl text-brand fw-900">&#8377;{{ cart_total }}</span>
+                                    <td class="product-subtotal" colspan="3">&#8377;{{ final_total }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Service Charge</th>
+                                    <td colspan="3">&#8377;65</td>
+                                </tr>
+                                <tr>
+                                    <th> Order Total</th>
+                                    <td colspan="3" class="product-subtotal">
+                                        <span class="font-xl text-brand fw-900">&#8377;{{ final_total_with_service_charge }}</span>
                                     </td>
                                 </tr>
                             </tbody>
-                              
+                            
                         </table>
                     </div>
                     <div class="bt-1 border-color-1 mt-30 mb-30"></div>
@@ -124,35 +138,61 @@
                                         <label class="form-check-label" for="address{{ address.id }}">
                                             Use This Address
                                         </label>
+                                        
                                     </div>
+                                    
                                     {% if address.is_default %}
                                     <strong>Default Address</strong>
                                     {% endif %}
-                                    </div>
-                                    {% endfor %}
+                                </div>
+                                
+                                {% endfor %}
+                                <p>Want to add a new address? <a href="{% url 'userlog:user_profile' %}">Add Address</a></p>
+
                             
-                                    <div class="mb-20">
-                                        <h5>Additional Information</h5>
+                                <div class="mb-20">
+                                    <h5>Additional Information</h5>
+                                </div>
+                                <div class="form-group mb-30">
+                                    <textarea rows="5" name="order_note" placeholder="Order notes" class="form-control"></textarea>
+                                </div>
+                                <div class="payment_method">
+                                    <div class="mb-25">
+                                        <h5>Payment</h5>
                                     </div>
-                                    <div class="form-group mb-30">
-                                        <textarea rows="5" name="order_note" placeholder="Order notes" class="form-control"></textarea>
-                                    </div>
-                                    <div class="payment_method">
-                                        <div class="mb-25">
-                                            <h5>Payment</h5>
-                                        </div>
-                                        <div class="payment_option">
-                                            <div class="custome-radio">
-                                                <input class="form-check-input" required="" type="radio" name="payment_option" id="cashondelivery" value="COD" checked="">
-                                                <label class="form-check-label" for="cashondelivery" data-bs-toggle="collapse" data-target="#cashondelivery_info" aria-controls="cashondelivery_info">Cash On Delivery</label>
-                                                <div class="form-group collapse in" id="cashondelivery_info">
-                                                    <p class="text-muted mt-5">Pay with cash On delivery.</p>
-                                                </div>
+                                    <div class="payment_option">
+                                        {% if wallet_balance > 0 %}
+                                        <div class="custome-radio">
+                                            <input class="form-check-input" required type="radio" name="payment_option" id="wallet" value="Wallet">
+                                            <label class="form-check-label" for="wallet" data-bs-toggle="collapse" data-target="#wallet_info" aria-controls="wallet_info">Wallet</label>
+                                            <p class="text-muted mt-5">Pay using your wallet balance. Current balance: ₹{{ wallet_balance }}</p>
+                                            <div class="form-group collapse in" id="wallet_info">
+                                                <p class="text-muted mt-5">Pay using your wallet balance. Current balance: ₹{{ wallet_balance }}</p>
                                             </div>
                                         </div>
+                                        {% endif %}
+                                        <div class="custome-radio">
+                                            <input class="form-check-input" required type="radio" name="payment_option" id="razorpay" value="Razorpay" {% if wallet_balance == 0 %}checked{% endif %}>
+                                            <label class="form-check-label" for="razorpay" data-bs-toggle="collapse" data-target="#razorpay_info" aria-controls="razorpay_info">Razorpay</label>
+                                            <div class="form-group collapse in" id="razorpay_info">
+                                                <p class="text-muted mt-5">Pay securely using Razorpay.</p>
+                                            </div>
+                                        </div>
+                                        {% if final_total <= 1000 %}
+                                        <div class="custome-radio">
+                                            <input class="form-check-input" required type="radio" name="payment_option" id="cashondelivery" value="COD">
+                                            <label class="form-check-label" for="cashondelivery" data-bs-toggle="collapse" data-target="#cashondelivery_info" aria-controls="cashondelivery_info">Cash On Delivery</label>
+                                            <div class="form-group collapse in" id="cashondelivery_info">
+                                                <p class="text-muted mt-5">Pay with cash on delivery.</p>
+                                            </div>
+                                        </div>
+                                        {% else %}
+                                        <p class="text-muted">Cash on Delivery is not available for orders above ₹1000.</p>
+                                        {% endif %}
                                     </div>
-                                    <button type="submit" class="btn btn-fill-out btn-block mt-30">Place Order</button>
-                                </form>
+                                </div>
+                                <button type="submit" class="btn btn-fill-out btn-block mt-30">Place Order</button>
+                            </form>
                             {% else %}
                             <p>No addresses found. <a href="{% url 'cart:order_address' %}">Add an address</a></p>
                             {% endif %}
@@ -160,8 +200,54 @@
                     </div>
                 </div>
             </div>
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">Available Coupons</h5>
+                    </div>
+                    <div class="card-body">
+                        {% if active_coupons %}
+                            <ul class="list-group">
+                                {% for coupon in active_coupons %}
+                                    <li class="list-group-item">
+                                        <strong>{{ coupon.code }}</strong>
+                                        <br>
+                                        {% if coupon.discount_type == 'percentage' %}
+                                            {{ coupon.discount_value }}% off
+                                        {% else %}
+                                            ₹{{ coupon.discount_value }} off
+                                        {% endif %}
+                                        {% if coupon.min_purchase_amount %}
+                                            <br>Minimum purchase: ₹{{ coupon.min_purchase_amount }}
+                                        {% endif %}
+                                    </li>
+                                {% endfor %}
+                            </ul>
+                        {% else %}
+                            <p>No active coupons available.</p>
+                        {% endif %}
+                    </div>
+                </div>
+        
+                <div class="card mt-3">
+                    <div class="card-header">
+                        <h5 class="mb-0">Apply Coupon</h5>
+                    </div>
+                    <div class="card-body">
+                        <form method="post" action="{% url 'coupon:apply_coupon' %}">
+                            {% csrf_token %}
+                            {{ coupon_form.as_p }}
+                            <button type="submit" class="btn btn-primary">Apply Coupon</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 </section>
+
+{% block extra_js %}
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+{% endblock %}
 
 {% endblock %}

@@ -1,0 +1,37 @@
+{% extends 'user_log/base.html' %}
+
+{% block title %}Audio Bliss {% endblock %}
+{% load static %}
+{% block body %}
+
+{% if messages %}
+<ul class="messages">
+    {% for message in messages %}
+        <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+    {% endfor %}
+</ul>
+{% endif %}
+
+<section class="hero-2 bg-green">
+    <div class="hero-content">
+        <div class="container">
+            <div class="text-center">
+                <h4 class="text-brand mb-20">Contact Audiobliss</h4>
+                <h1 class="mb-20 wow fadeIn animated font-xxl fw-900">
+                    We’re Here to <br> Help You <span class="text-style-1">Connect</span>
+                </h1>
+                <p class="w-50 m-auto mb-50 wow fadeIn animated">
+                    Whether you have questions about our products, need support, or just want to say hello, we're always here for you. Reach out to us and we'll get back to you as soon as possible.
+                </p>
+                <p class="wow fadeIn animated">
+                    <a class="btn btn-brand btn-lg font-weight-bold text-white border-radius-5 btn-shadow-brand hover-up" href="">Contact Us</a>
+                    <a class="btn btn-outline btn-lg btn-brand-outline font-weight-bold text-brand bg-white text-hover-white ml-15 border-radius-5 btn-shadow-brand hover-up" href="">FAQs</a>
+                </p>
+            </div>
+        </div>
+    </div>
+</section>
+
+
+
+{% endblock %}

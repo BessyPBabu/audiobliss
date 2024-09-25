@@ -1,0 +1,26 @@
+{% extends 'user_log/baseuser.html' %}
+
+{% block title %}Audio Bliss - Return Request{% endblock %}
+
+{% block body %}
+{% load static %}
+
+
+<div class="container mb-25 mt-25">
+    <div class="row">
+        <div class="col-md-8 offset-md-2">
+            <div class="card">
+                <div class="card-body text-center">
+                    <h2>Return Request for Order #{{ order.id }}</h2>
+                    <form method="post">
+                        {% csrf_token %}
+                        {{ form.as_p }}
+                        <button type="submit">Submit Return Request</button>
+                    </form>
+                    
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

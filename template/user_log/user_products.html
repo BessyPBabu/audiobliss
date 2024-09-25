@@ -22,7 +22,7 @@
                 </form>
                 <div class="shop-product-fillter">
                     <div class="totall-product">
-                        <p> We found <strong class="text-brand">{{ products.count }}</strong> items for you!</p>
+                        <p> We found <strong class="text-brand">{{ total_product_count }}</strong> items for you!</p>
                     </div>
                     <div class="sort-by-product-area">
                         <div class="sort-by-cover">
@@ -59,11 +59,16 @@
                                     </a>
                                 </div>
                                 <div class="product-action-1">
-                                    <a aria-label="Add To Wishlist" class="action-btn hover-up" href=""><i class="fi-rs-heart"></i></a>
+                                   
                                 </div>
                                 <div class="product-badges product-badges-position product-badges-mrg">
                                     <span class="hot">Hot</span>
                                 </div>
+                                {% if product.active_offer %}
+                                    <div class="product-badges product-badges-position product-badges-mrg">
+                                        <span class="hot">{{ product.active_offer.name }}</span>
+                                    </div>
+                                {% endif %}
                             </div>
                             <div class="product-content-wrap">
                                 <div class="product-category">
@@ -77,16 +82,23 @@
                                     <span class="font-small ml-5 text-muted"> (4.0)</span>
                                 </div>
                                 <div>
-                                    <span class="font-small text-muted">By <a href="">{{ product.brand_name }}</a></span>
+                                    <span class="font-small text-muted">By <a href="">{{ product.brand }}</a></span>
                                 </div>
                                 <div class="product-card-bottom">
                                     <div class="product-price">
-                                        {% if product.variants.exists %}
-                                            <span>&#8377;{{ product.variants.first.price }}</span>
+                                        {% if product.original_price %}
+                                            {% if product.discounted_price < product.original_price %}
+                                                <span>&#8377;{{ product.discounted_price|floatformat:2 }}</span>
+                                                <span class="old-price">&#8377;{{ product.original_price|floatformat:2 }}</span>
+                                            {% else %}
+                                                <span>&#8377;{{ product.original_price|floatformat:2 }}</span>
+                                            {% endif %}
                                         {% else %}
-                                            <span>Price not available</span>
+                                            <span>Price </span>
                                         {% endif %}
                                     </div>
+                
+                                    
                                     <div class="product-action-1 show">
                                         {% if product.variants.exists %}
                                         <a aria-label="Add To Cart" class="action-btn hover-up add-to-cart" href="javascript:void(0);" data-product-variant-id="{{ product.variants.first.id }}">
@@ -106,13 +118,34 @@
                 <div class="pagination-area mt-15 mb-sm-5 mb-lg-0">
                     <nav aria-label="Page navigation example">
                         <ul class="pagination justify-content-start">
-                            <li class="page-item active"><a class="page-link" href="#">01</a></li>
-                            <li class="page-item"><a class="page-link" href="#">02</a></li>
-                           
-                            <li class="page-item"><a class="page-link" href="#"><i class="fi-rs-angle-double-small-right"></i></a></li>
+                            {% if products.has_previous %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ products.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if selected_category %}&category={{ selected_category }}{% endif %}&sort_by={{ sort_by }}">
+                                        <i class="fi-rs-angle-double-small-left"></i>
+                                    </a>
+                                </li>
+                            {% endif %}
+                            
+                            {% for num in products.paginator.page_range %}
+                                {% if products.number == num %}
+                                    <li class="page-item active"><a class="page-link" href="#">{{ num }}</a></li>
+                                {% else %}
+                                    <li class="page-item"><a class="page-link" href="?page={{ num }}{% if search_query %}&search={{ search_query }}{% endif %}{% if selected_category %}&category={{ selected_category }}{% endif %}&sort_by={{ sort_by }}">{{ num }}</a></li>
+                                {% endif %}
+                            {% endfor %}
+                            
+                            {% if products.has_next %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ products.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if selected_category %}&category={{ selected_category }}{% endif %}&sort_by={{ sort_by }}">
+                                        <i class="fi-rs-angle-double-small-right"></i>
+                                    </a>
+                                </li>
+                            {% endif %}
                         </ul>
                     </nav>
                 </div>
+                
+                
             </div>
             <div class="col-lg-3 primary-sidebar sticky-sidebar">
                 <div class="widget-category mb-30">
@@ -163,45 +196,61 @@
 
 {% block extra_js %}
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<!-- Add Toastify CSS and JS -->
+<link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
+<script type="text/javascript" src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
+
 <script>
-    $(document).ready(function() {
-        $('.add-to-cart').click(function(e) {
-            e.preventDefault();
-            var productVariantId = $(this).data('product-variant-id');
-    
-            // Check if productVariantId is valid
-            if (!productVariantId) {
-                alert('No variant selected');
-                return;
-            }
-    
-            $.ajax({
-                url: '{% url "cart:add_to_cart" %}',
-                type: 'POST',
-                data: {
-                    'product_variant_id': productVariantId,
-                    'quantity': 1,
-                    'csrfmiddlewaretoken': '{{ csrf_token }}'
-                },
-                dataType: 'json',
-                success: function(response) {
-                    if (response.success) {
-                        alert('Product added to cart successfully!');
-                        // Update cart total and item count in the UI
-                        $('#cart-total').text(response.cart_total);
-                        $('#cart-item-count').text(response.item_count);
-                    }
-                },
-                error: function(xhr, errmsg, err) {
-                    var errorMessage = xhr.responseJSON ? xhr.responseJSON.error : 'An error occurred';
-                    alert('Error: ' + errorMessage);
+$(document).ready(function() {
+    $('.add-to-cart').click(function(e) {
+        e.preventDefault();
+        var productVariantId = $(this).data('product-variant-id');
+
+        // Check if productVariantId is valid
+        if (!productVariantId) {
+            showToast('No variant selected', 'error');
+            return;
+        }
+
+        $.ajax({
+            url: '{% url "cart:add_to_cart" %}',
+            type: 'POST',
+            data: {
+                'product_variant_id': productVariantId,
+                'quantity': 1,
+                'csrfmiddlewaretoken': '{{ csrf_token }}'
+            },
+            dataType: 'json',
+            success: function(response) {
+                if (response.success) {
+                    showToast('Product added to cart successfully!', 'success');
+                    // Update cart total and item count in the UI
+                    $('#cart-total').text(response.cart_total);
+                    $('#cart-item-count').text(response.item_count);
                 }
-            });
+            },
+            error: function(xhr, errmsg, err) {
+                var errorMessage = xhr.responseJSON ? xhr.responseJSON.error : 'Please login';
+                showToast('Error: ' + errorMessage, 'error');
+            }
         });
     });
-    </script>
-    
-    
+
+    function showToast(message, type) {
+        var backgroundColor = type === 'success' ? '#4CAF50' : '#F44336';
+        
+        Toastify({
+            text: message,
+            duration: 3000,
+            close: true,
+            gravity: "top",
+            position: "right",
+            backgroundColor: backgroundColor,
+            stopOnFocus: true
+        }).showToast();
+    }
+});
+</script>
 {% endblock %}
 
 {% endblock %}

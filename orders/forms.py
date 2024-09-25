@@ -62,8 +62,47 @@ class OrderForm(forms.ModelForm):
             }
         }
 
+    def __init__(self, *args, **kwargs):
+        super(OrderForm, self).__init__(*args, **kwargs)
+        # Make the order_total field read-only
+        self.fields['order_total'].widget.attrs['readonly'] = True
+
+
     def clean_order_note(self):
         order_note = self.cleaned_data.get('order_note')
         if order_note and len(order_note) > 100:
             raise forms.ValidationError('Order note cannot exceed 100 characters.')
         return order_note
+
+
+CANCEL_REASON_CHOICES = [
+    ('Changed my mind', 'Changed my mind'),
+    ('Ordered by mistake', 'Ordered by mistake'),
+    ('Found a better price', 'Found a better price'),
+    ('others', 'others'),
+]
+
+class CancelOrderForm(forms.Form):
+    reason = forms.ChoiceField(choices=CANCEL_REASON_CHOICES, required=False, label="Select a reason")
+    custom_reason = forms.CharField(max_length=255, required=False, label="Or provide a custom reason")
+    
+    def clean(self):
+        cleaned_data = super().clean()
+        reason = cleaned_data.get('reason')
+        custom_reason = cleaned_data.get('custom_reason')
+        
+        if not reason and not custom_reason:
+            raise forms.ValidationError("Please select or provide a reason for cancellation.")
+        return cleaned_data
+
+
+from django import forms
+from .models import ReturnRequest
+
+class ReturnRequestForm(forms.ModelForm):
+    class Meta:
+        model = ReturnRequest
+        fields = ['reason']
+        widgets = {
+            'reason': forms.Textarea(attrs={'rows': 4, 'cols': 50})
+        }

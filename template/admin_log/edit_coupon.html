@@ -1,0 +1,36 @@
+{% extends 'admin_log/base.html' %}
+
+{% block title %}Edit Coupon - Audio Bliss{% endblock %}
+
+{% block extra_css %}
+<!-- Add any additional CSS here -->
+{% endblock %}
+
+{% block body %}
+{% load static %}
+
+<section class="content-main">
+    <div class="content-header">
+        <div>
+            <h2 class="content-title card-title">Edit Coupon</h2>
+        </div>
+        <div>
+            {% for message in messages %}
+                <div class="alert alert-danger" role="alert">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+    <div class="card">
+        <div class="card-body">
+            <form method="post" action="{% url 'coupon:coupon_edit' coupon.id %}">
+                {% csrf_token %}
+                {{ form.as_p }}
+                <button type="submit" class="btn btn-primary">Update Coupon</button>
+            </form>
+        </div> <!-- .card-body -->
+    </div> <!-- .card -->
+</section>
+
+{% endblock %}

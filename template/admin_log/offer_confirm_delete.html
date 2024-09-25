@@ -1,0 +1,30 @@
+{% extends 'admin_log/base.html' %}
+
+{% block title %}Audio Bliss - Delete Offer{% endblock %}
+
+{% block extra_css %}
+{% endblock %}
+
+{% block body %}
+{% load static %}
+
+<section class="content-main">
+    <div class="content-header">
+        <div>
+            <h2 class="content-title card-title">Delete Offer</h2>
+            <p>Confirm offer deletion</p>
+        </div>
+    </div>
+    <div class="card">
+        <div class="card-body">
+            <h5>Are you sure you want to delete the offer "{{ offer.name }}"?</h5>
+            <form method="post">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-danger">Confirm Delete</button>
+                <a href="{% url 'offer_management:offer_detail' offer.id %}" class="btn btn-secondary">Cancel</a>
+            </form>
+        </div>
+    </div>
+</section>
+
+{% endblock %}

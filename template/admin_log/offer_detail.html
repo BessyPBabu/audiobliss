@@ -1,0 +1,71 @@
+{% extends 'admin_log/base.html' %}
+
+{% block title %}Audio Bliss - Offer Detail{% endblock %}
+
+{% block extra_css %}
+{% endblock %}
+
+{% block body %}
+{% load static %}
+
+<section class="content-main">
+    <div class="content-header">
+        <div>
+            <h2 class="content-title card-title">Offer Detail</h2>
+            <p>View offer details</p>
+        </div>
+        <div>
+            <a href="{% url 'offer_management:offer_update' offer.id %}" class="btn btn-primary">Edit Offer</a>
+            <a href="{% url 'offer_management:offer_list' %}" class="btn btn-secondary">Back to Offer List</a>
+        </div>
+    </div>
+    <div class="card">
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <h5>Offer Information</h5>
+                    <p><strong>Name:</strong> {{ offer.name }}</p>
+                    <p><strong>Type:</strong> {{ offer.get_offer_type_display }}</p>
+                    <p><strong>Discount:</strong> {{ offer.discount_percentage }}%</p>
+                    <p><strong>Start Date:</strong> {{ offer.start_date }}</p>
+                    <p><strong>End Date:</strong> {{ offer.end_date }}</p>
+                    <p><strong>Status:</strong>
+                        {% if offer.is_active %}
+                            <span class="badge bg-success">Active</span>
+                        {% else %}
+                            <span class="badge bg-danger">Inactive</span>
+                        {% endif %}
+                    </p>
+                    <p><strong>Description:</strong> {{ offer.description }}</p>
+                </div>
+                <div class="col-md-6">
+                    <h5>Related Items</h5>
+                    {% if offer.offer_type == 'product' %}
+                        <h6>Products:</h6>
+                        <ul>
+                            {% for product_offer in offer.productoffer_set.all %}
+                                <li>{{ product_offer.product.name }}</li>
+                            {% endfor %}
+                        </ul>
+                    {% elif offer.offer_type == 'category' %}
+                        <h6>Categories:</h6>
+                        <ul>
+                            {% for category_offer in offer.categoryoffer_set.all %}
+                                <li>{{ category_offer.category.name }}</li>
+                            {% endfor %}
+                        </ul>
+                    {% elif offer.offer_type == 'referral' %}
+                        <h6>Referrals:</h6>
+                        <ul>
+                            {% for referral_offer in offer.referraloffer_set.all %}
+                                <li>{{ referral_offer.referrer.username }} -> {{ referral_offer.referred.username }}</li>
+                            {% endfor %}
+                        </ul>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+{% endblock %}

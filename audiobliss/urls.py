@@ -28,6 +28,9 @@ urlpatterns = [
     path('cart/',include('cart.urls')),
     path('orders/',include('orders.urls')),
     path('admin_log/',include('admin_log.urls')),
+    path('offer_management/',include('offer_management.urls')),
+    path('coupon/',include('coupon.urls')),
+
     
 
 

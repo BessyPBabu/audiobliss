@@ -9922,11 +9922,14 @@ span.fi-rs-apps {
 .zoomContainer{ z-index: 9999;}
 .zoomWindow{ z-index: 9999;}
 
-@media (forced-colors: active) {
+/* @media (forced-colors: active) {
   .element {
       forced-color-adjust: auto;
       background-color: Highlight;
       color: HighlightText;
   }
 }
+@media (-ms-high-contrast: active) {
+  /* High contrast styles */
+ */
 /*# sourceMappingURL=main.css.map */

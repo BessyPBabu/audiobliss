@@ -8,23 +8,30 @@
         <div>
             <h2 class="content-title card-title">Products Updation</h2>
             <p>Lorem ipsum dolor sit amet.</p>
+        </div>
+    </div>
 
+    <div class="card mb-4">
+        <div class="card-body">
             {% if messages %}
-            <div class="messages">
-                {% for message in messages %}
-                <div class="alert {% if 'productupdate' in message.tags %}alert-danger{% else %}alert-success{% endif %}" role="alert">
-                    {{ message }}
+                <div class="messages mb-3">
+                    {% for message in messages %}
+                        <div class="alert 
+                            {% if 'productupdate' in message.tags %}alert-danger
+                            {% else %}alert-success{% endif %}" role="alert">
+                            {{ message }}
+                        </div>
+                    {% endfor %}
                 </div>
-                {% endfor %}
-            </div>
             {% endif %}
-
 
             <form method="post">
                 {% csrf_token %}
                 {{ form.as_p }}
-                <button type="submit">Save changes</button>
-              </form>
+                <div class="text-end">
+                    <button type="submit" class="btn btn-primary">Save changes</button>
+                </div>
+            </form>
         </div>
     </div>
 </section>

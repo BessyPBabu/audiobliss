@@ -4,7 +4,37 @@
 {% load static %}
 {% block body %}
 
+{% if messages %}
+<ul class="messages">
+    {% for message in messages %}
+        <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+    {% endfor %}
+</ul>
+{% endif %}
 
+<section class="hero-2 bg-green">
+    <div class="hero-content">
+        <div class="container">
+            <div class="text-center">
+                <h4 class="text-brand mb-20">Welcome to Audiobliss</h4>
+                <h1 class="mb-20 wow fadeIn animated font-xxl fw-900">
+                    Experience the Ultimate <br> in <span class="text-style-1">Audio Technology</span>
+                </h1>
+                <p class="w-50 m-auto mb-50 wow fadeIn animated">
+                    At Audiobliss, we offer a premium selection of headphones, earbuds, earphones, and neckbands, designed to deliver the perfect sound experience. Whether you're a music lover or an audiophile, our products are crafted to meet your highest expectations.
+                </p>
+                <p class="w-50 m-auto mb-50 wow fadeIn animated">
+                    Explore our range and discover the ideal audio solution that suits your lifestyle. From cutting-edge technology to stylish designs, Audiobliss brings you closer to the sound you love.
+                </p>
+                <p class="wow fadeIn animated">
+                    <a class="btn btn-brand btn-lg font-weight-bold text-white border-radius-5 btn-shadow-brand hover-up" href="{% url 'userlog:user_products' %}">Shop Now</a>
+                    <a class="btn btn-outline btn-lg btn-brand-outline font-weight-bold text-brand bg-white text-hover-white ml-15 border-radius-5 btn-shadow-brand hover-up" href="{% url 'userlog:about' %}">Learn More</a>
+                </p>
+            </div>
+        </div>
+    </div>
+</section>
 
 
 {% endblock %}
+
