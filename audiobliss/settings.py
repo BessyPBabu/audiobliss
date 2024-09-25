@@ -11,6 +11,8 @@ https://docs.djangoproject.com/en/5.0/ref/settings/
 """
 import os
 from pathlib import Path
+from decouple import config, Csv
+
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -20,12 +22,13 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-etkxv0=*0d%vsv_&^4$onr5^y61jc$rj(&hg^=&qoc9d%k^le3'
+SECRET_KEY = config('SECRET_KEY')
+
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = config('DEBUG', default=False, cast=bool)
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='').split(',')
 
 
 # Application definition
@@ -91,16 +94,18 @@ WSGI_APPLICATION = 'audiobliss.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.0/ref/settings/#databases
 
+
 DATABASES = {
-        'default': {
+    'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'audiobliss_db',
-        'USER': 'postgres',        
-        'PASSWORD': 'bessy/123',
-        'HOST': 'localhost',                
-        'PORT': '5432',
+        'NAME': config('DATABASE_NAME'),
+        'USER': config('DATABASE_USER'),
+        'PASSWORD': config('DATABASE_PASSWORD'),
+        'HOST': config('DATABASE_HOST'),
+        'PORT': config('DATABASE_PORT', default='5432'),
     }
 }
+
 
 AUTH_USER_MODEL = 'user_log.Account'
 
@@ -114,11 +119,12 @@ AUTHENTICATION_BACKENDS = [
 ]
 
 
+# Social Authentication Providers
 SOCIALACCOUNT_PROVIDERS = {
     'google': {
         'APP': {
-            'client_id': '293818351590-s1ftqoe4nocup8vf666e922qhq1crigc.apps.googleusercontent.com',
-            'secret': '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',
+            'client_id': config('SOCIAL_AUTH_GOOGLE_CLIENT_ID'),
+            'secret': config('SOCIAL_AUTH_GOOGLE_SECRET'),
             'key': ''
         },
         'SCOPE': [
@@ -132,6 +138,7 @@ SOCIALACCOUNT_PROVIDERS = {
     }
 }
 
+# Login on GET request
 SOCIALACCOUNT_LOGIN_ON_GET = True
 
 
@@ -217,13 +224,16 @@ LOGGING = {
     },
 }
 
-# Email settings
-EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend' 
-EMAIL_HOST = 'smtp.gmail.com'  #  email host
+
+
+# Email configuration
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True
-EMAIL_HOST_USER = 'apoorvaanna08@gmail.com'  #  email
-EMAIL_HOST_PASSWORD = 'ukpr rxve heum ugxo'  #  email password 
+EMAIL_HOST_USER = config('EMAIL_HOST_USER')
+EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD')
+
 
 
 
@@ -234,8 +244,8 @@ SESSION_ENGINE = 'django.contrib.sessions.backends.db'
 ADMIN_SESSION_ENGINE = 'django.contrib.sessions.backends.db'  # This should be configured separately if using a different engine
 
 
-# settings.py
-
-RAZORPAY_KEY_ID = 'rzp_test_UwresUeE2YSHhX'
-RAZORPAY_KEY_SECRET = '9CS7FEZEVzqVQmAgRhMHE08o'
 SECURE_CROSS_ORIGIN_OPENER_POLICY = "same-origin-allow-popups"
+
+# Razorpay configuration
+RAZORPAY_KEY_ID = config('RAZORPAY_KEY_ID')
+RAZORPAY_KEY_SECRET = config('RAZORPAY_KEY_SECRET')
