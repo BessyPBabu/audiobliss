@@ -1,96 +1,97 @@
+import re
+import logging
+from decimal import Decimal
 from django.db import models
+from django.core.exceptions import ValidationError
 from imagekit.models import ProcessedImageField
 from imagekit.processors import ResizeToFill
-from django.core.exceptions import ValidationError
-import re
-from django.utils.translation import gettext_lazy as gettext
-from django.apps import apps
 
-# Brand model (new)
+logger = logging.getLogger(__name__)
+
+
 class Brand(models.Model):
     name = models.CharField(max_length=100, unique=True)
     is_deleted = models.BooleanField(default=False)
     is_active = models.BooleanField(default=True)
 
-    class Meta:
-        ordering = ['name']
+    def soft_delete(self):
+        self.is_deleted = True
+        self.is_active = False
+        self.save(update_fields=['is_deleted', 'is_active'])
+        logger.info("Soft deleted brand %s", self.id)
 
     def __str__(self):
         return self.name
-    
-def get_default_brand():
-    Brand = apps.get_model('product_management', 'Brand')
-    return Brand.objects.first().id if Brand.objects.exists() else None
 
-# Category model
+    class Meta:
+        ordering = ['name']
+
+
 class Category(models.Model):
     name = models.CharField(max_length=100, unique=True)
     description = models.TextField(blank=True)
     is_deleted = models.BooleanField(default=False)
     is_active = models.BooleanField(default=True)
 
-    class Meta:
-        ordering = ['id']
+    def soft_delete(self):
+        self.is_deleted = True
+        self.is_active = False
+        self.save(update_fields=['is_deleted', 'is_active'])
+        # Cascade deactivate products
+        self.product_set.filter(deleted=False).update(is_active=False)
+        logger.info("Soft deleted category %s and deactivated related products", self.id)
 
     def __str__(self):
         return self.name
-    
-# Product model
+
+    class Meta:
+        ordering = ['id']
+
+
 class Product(models.Model):
     title = models.CharField(max_length=255)
     description = models.TextField()
-    brand = models.ForeignKey('Brand', on_delete=models.CASCADE) 
+    brand = models.ForeignKey(Brand, on_delete=models.CASCADE)
     category = models.ForeignKey(Category, on_delete=models.CASCADE)
     deleted = models.BooleanField(default=False)
     is_active = models.BooleanField(default=True)
 
-    class Meta:
-        constraints = [
-            models.UniqueConstraint(fields=['title'], name='unique_title', condition=models.Q(deleted=False)),
-        ]
-        ordering = ['id']
-
     def clean(self):
-        # Check for title uniqueness, excluding the current instance
-        if Product.objects.filter(title__iexact=self.title).exclude(pk=self.pk).exists():
-            raise ValidationError("A product with this title already exists.")
-
-        # Check if the associated category is active
         if not self.category.is_active:
             raise ValidationError("Cannot activate a product in an inactive category.")
+        if not self.brand.is_active:
+            raise ValidationError("Cannot activate a product with an inactive brand.")
+
+    def soft_delete(self):
+        self.deleted = True
+        self.is_active = False
+        self.save(update_fields=['deleted', 'is_active'])
+        self.variants.filter(deleted=False).update(deleted=True, is_active=False)
+        logger.info("Soft deleted product %s and its variants", self.id)
+
+    def get_best_offer(self):
+        from services.offer_service import get_best_offer_for_product
+        return get_best_offer_for_product(self)
+
+    def get_discounted_price(self):
+        from services.offer_service import get_discounted_price_for_variant
+        first_variant = self.variants.filter(is_active=True, deleted=False).first()
+        if first_variant:
+            return get_discounted_price_for_variant(first_variant)
+        return None
 
     def __str__(self):
         return self.title
-    
-    def get_best_offer(self):
-        from offer_management.models import ProductOffer, CategoryOffer
-        
-        product_offers = ProductOffer.objects.filter(product=self, offer__is_active=True)
-        category_offers = CategoryOffer.objects.filter(category=self.category, offer__is_active=True)
-        
-        best_discount = 0
-        best_offer = None
 
-        for offer in product_offers:
-            if offer.offer.is_valid() and offer.offer.discount_percentage > best_discount:
-                best_discount = offer.offer.discount_percentage
-                best_offer = offer
+    class Meta:
+        ordering = ['id']
+        constraints = [
+            models.UniqueConstraint(
+                fields=['title'], name='unique_title', condition=models.Q(deleted=False)
+            )
+        ]
 
-        for offer in category_offers:
-            if offer.offer.is_valid() and offer.offer.discount_percentage > best_discount:
-                best_discount = offer.offer.discount_percentage
-                best_offer = offer
 
-        return best_offer
-
-    def get_discounted_price(self):
-        best_offer = self.get_best_offer()
-        if best_offer:
-            if hasattr(best_offer, 'apply_discount'):
-                return best_offer.apply_discount(self.variants.first().price)
-        return self.variants.first().price
-
-# Color model
 class Color(models.Model):
     name = models.CharField(max_length=50)
     hex_code = models.CharField(max_length=7, null=True, blank=True)
@@ -101,10 +102,8 @@ class Color(models.Model):
 
     def __str__(self):
         return f"{self.name} ({self.hex_code})"
-    
 
 
-# ProductVariant model
 class ProductVariant(models.Model):
     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='variants')
     color = models.ForeignKey(Color, on_delete=models.CASCADE)
@@ -113,44 +112,62 @@ class ProductVariant(models.Model):
     max_quantity_per_user = models.PositiveIntegerField(default=5)
     deleted = models.BooleanField(default=False)
     is_active = models.BooleanField(default=True)
-    image1 = ProcessedImageField(upload_to='static/admin/imgs',
-                                 processors=[ResizeToFill(800, 800)],
-                                 format='JPEG',
-                                 options={'quality': 90},
-                                 null=True, blank=True)
-    image2 = ProcessedImageField(upload_to='static/admin/imgs',
-                                 processors=[ResizeToFill(800, 800)],
-                                 format='JPEG',
-                                 options={'quality': 90},
-                                 null=True, blank=True)
-    image3 = ProcessedImageField(upload_to='static/admin/imgs',
-                                 processors=[ResizeToFill(800, 800)],
-                                 format='JPEG',
-                                 options={'quality': 90},
-                                 null=True, blank=True)
-
-    class Meta:
-        unique_together = ('product', 'color')
-        ordering = ['id']
+    image1 = ProcessedImageField(
+        upload_to='products/',
+        processors=[ResizeToFill(800, 800)],
+        format='JPEG',
+        options={'quality': 90},
+        null=True, blank=True,
+    )
+    image2 = ProcessedImageField(
+        upload_to='products/',
+        processors=[ResizeToFill(800, 800)],
+        format='JPEG',
+        options={'quality': 90},
+        null=True, blank=True,
+    )
+    image3 = ProcessedImageField(
+        upload_to='products/',
+        processors=[ResizeToFill(800, 800)],
+        format='JPEG',
+        options={'quality': 90},
+        null=True, blank=True,
+    )
 
     def clean(self):
         if self.price is not None and self.price < 0:
             raise ValidationError("Price must be non-negative.")
-        
-        if self.stock is not None and self.stock < 0:
-            raise ValidationError("Stock must be non-negative.")
-
-        if self.price is None:
-            raise ValidationError("Price cannot be None.")
-
-        if self.stock is None:
-            raise ValidationError("Stock cannot be None.")
-
         if self.is_active:
             if not self.product.is_active:
                 raise ValidationError("Cannot activate a variant of an inactive product.")
             if not self.product.category.is_active:
-                raise ValidationError("Cannot activate a variant of a product in an inactive category.")
+                raise ValidationError("Cannot activate a variant in an inactive category.")
+
+    def soft_delete(self):
+        self.deleted = True
+        self.is_active = False
+        self.save(update_fields=['deleted', 'is_active'])
+        logger.info("Soft deleted variant %s", self.id)
+
+    def is_in_stock(self):
+        return self.stock > 0
+
+    def get_discounted_price(self):
+        from services.offer_service import get_discounted_price_for_variant
+        return get_discounted_price_for_variant(self)
+
+    def reduce_stock(self, quantity):
+        if self.stock < quantity:
+            raise ValueError(
+                f"Insufficient stock for {self.product.title}. Available: {self.stock}"
+            )
+        self.stock -= quantity
+        self.save(update_fields=['stock'])
+        logger.info("Reduced stock for variant %s by %s. Remaining: %s", self.id, quantity, self.stock)
 
     def __str__(self):
-        return f'{self.product.title} - {self.color.name}'
+        return f"{self.product.title} - {self.color.name}"
+
+    class Meta:
+        unique_together = ('product', 'color')
+        ordering = ['id']

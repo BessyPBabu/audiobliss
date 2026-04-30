@@ -1,16 +1,15 @@
+import logging
+from decimal import Decimal
 from django.db import models
-from user_log.models import Account
-from product_management.models import Product, Category
 from django.utils import timezone
 
+logger = logging.getLogger(__name__)
 
-# Create your models here.
 
 class Offer(models.Model):
     OFFER_TYPES = (
         ('product', 'Product Offer'),
         ('category', 'Category Offer'),
-        # ('referral', 'Referral Offer'),
     )
 
     name = models.CharField(max_length=100)
@@ -25,49 +24,44 @@ class Offer(models.Model):
         now = timezone.now()
         return self.is_active and self.start_date <= now <= self.end_date
 
+    def deactivate(self):
+        self.is_active = False
+        self.save(update_fields=['is_active'])
+        logger.info("Deactivated offer %s", self.id)
+
     def __str__(self):
         return self.name
 
+
 class ProductOffer(models.Model):
-    offer = models.ForeignKey(Offer, on_delete=models.CASCADE)
-    product = models.ForeignKey(Product, on_delete=models.CASCADE)
+    offer = models.ForeignKey(Offer, on_delete=models.CASCADE, related_name='product_offers')
+    product = models.ForeignKey(
+        'product_management.Product', on_delete=models.CASCADE, related_name='product_offers'
+    )
 
     def apply_discount(self, price):
-        if self.offer.is_valid():
-            discount = price * (self.offer.discount_percentage / 100)
-            return price - discount
-        return price
+        if not self.offer.is_valid():
+            return Decimal(str(price))
+        price = Decimal(str(price))
+        discount = price * (self.offer.discount_percentage / Decimal('100'))
+        return (price - discount).quantize(Decimal('0.01'))
 
     def __str__(self):
         return f"{self.offer.name} - {self.product.title}"
-    
 
 
 class CategoryOffer(models.Model):
-    offer = models.ForeignKey(Offer, on_delete=models.CASCADE)
-    category = models.ForeignKey(Category, on_delete=models.CASCADE)
+    offer = models.ForeignKey(Offer, on_delete=models.CASCADE, related_name='category_offers')
+    category = models.ForeignKey(
+        'product_management.Category', on_delete=models.CASCADE, related_name='category_offers'
+    )
 
     def apply_discount(self, price):
-        if self.offer.is_valid():
-            discount = price * (self.offer.discount_percentage / 100)
-            return price - discount
-        return price
+        if not self.offer.is_valid():
+            return Decimal(str(price))
+        price = Decimal(str(price))
+        discount = price * (self.offer.discount_percentage / Decimal('100'))
+        return (price - discount).quantize(Decimal('0.01'))
 
     def __str__(self):
         return f"{self.offer.name} - {self.category.name}"
-
-class ReferralOffer(models.Model):
-    offer = models.ForeignKey(Offer, on_delete=models.CASCADE)
-    referrer = models.ForeignKey(Account, on_delete=models.CASCADE, related_name='referrer')
-    referred = models.ForeignKey(Account, on_delete=models.CASCADE, related_name='referred')
-    is_claimed = models.BooleanField(default=False)
-
-    def claim_offer(self):
-        if not self.is_claimed and self.offer.is_valid():
-            self.is_claimed = True
-            self.save()
-            return True
-        return False
-
-    def __str__(self):
-        return f"{self.offer.name} - {self.referrer.username} -> {self.referred.username}"

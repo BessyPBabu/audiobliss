@@ -1,42 +1,22 @@
-from django.shortcuts import render, redirect , get_object_or_404
-from django.contrib.auth import login , logout
-from django.views.decorators.cache import cache_control,never_cache
-from django.utils import timezone
-from datetime import timedelta
-from django.core.paginator import Paginator , PageNotAnInteger,EmptyPage
-from django.contrib.auth.decorators import login_required
-from django.core.mail import send_mail 
-from django.conf import settings
-from .forms import RegistrationForm, AccountAuthenticationForm, OTPForm , AddressForm, AccountUpdateForm, EmailUpdateForm
-from .models import Account, OTP, Address, Wallet, WalletHistory
-from product_management.models import Product , Category 
-from django.db.models import Min, Max 
-from django.contrib.auth import authenticate
-from django.shortcuts import render, redirect
-from django.contrib import messages
-from django.contrib.auth.backends import ModelBackend
-from django.http import HttpResponse
-from django.template.loader import render_to_string
-from django.db.models.query_utils import Q
-from django.utils.http import urlsafe_base64_encode
-from django.contrib.auth.tokens import default_token_generator
-from django.utils.encoding import force_bytes
-import random
-import string
-from django.core.exceptions import ObjectDoesNotExist
-from orders.models import Order, OrderProduct ,ReturnRequest
-from orders.forms import CancelOrderForm , ReturnRequestForm
-from offer_management.models import ProductOffer,CategoryOffer
-from decimal import Decimal
-from django.db.models import Q, Min, Max, F, ExpressionWrapper, DecimalField, Subquery, OuterRef,Value
-from django.db.models.functions import Coalesce, Greatest
-from cart.models import WishlistItem
-
 import logging
+from django.contrib import messages
+from django.contrib.auth import login, logout, authenticate
+from django.contrib.auth.decorators import login_required
+from django.shortcuts import render, redirect, get_object_or_404
+from django.views.decorators.cache import cache_control, never_cache
+
+import services.user_service as user_service
+import services.product_service as product_service
+import services.wallet_service as wallet_service
+from .forms import (
+    RegistrationForm, AccountAuthenticationForm, OTPForm,
+    AddressForm, AccountUpdateForm, EmailUpdateForm,
+)
+from .models import Account, Address
+
 logger = logging.getLogger(__name__)
 
 
-# Create your views here.
 def index(request):
     return render(request, 'user_log/index.html')
 
@@ -46,80 +26,70 @@ def contact(request):
 
 
 def about(request):
-    return render(request,'user_log/about.html')
+    return render(request, 'user_log/about.html')
 
 
-#======================================= USER SIGNUP,LOGIN,LOGOUT START======================================================#
-
+# ─── Auth ─────────────────────────────────────────────────────────────────────
 
 @cache_control(no_cache=True, must_revalidate=True, no_store=True)
 def user_signup(request):
+    if request.user.is_authenticated:
+        return redirect('userlog:index')
+
     if request.method == 'POST':
         form = RegistrationForm(request.POST)
         if form.is_valid():
-            user = form.save(commit=False)
-            user.set_password(form.cleaned_data['password1'])
-            user.is_active = False  # User remains inactive until OTP is verified
-            user.save()
-            otp = OTP.objects.create(user=user)
-            send_otp_via_email(user.email, otp.otp)
-            return redirect('userlog:verify_otp', user_id=user.id)
+            try:
+                user = form.save(commit=False)
+                user.set_password(form.cleaned_data['password1'])
+                user.is_active = False
+                user.save()
+                user_service.create_and_send_otp(user)
+                return redirect('userlog:verify_otp', user_id=user.id)
+            except Exception:
+                logger.exception("Signup error for email %s", form.cleaned_data.get('email'))
+                messages.error(request, "An error occurred. Please try again.")
     else:
         form = RegistrationForm()
+
     return render(request, 'user_log/user_register.html', {'form': form})
 
 
 def verify_otp(request, user_id):
-    user = Account.objects.get(id=user_id)
+    user = get_object_or_404(Account, id=user_id)
     message = ''
-    form = OTPForm()
-    
+
     if request.method == 'POST':
         if 'verify' in request.POST:
             form = OTPForm(request.POST)
             if form.is_valid():
-                otp_code = form.cleaned_data['otp']
-                otp = OTP.objects.filter(user=user, is_active=True).first()
-                if otp and otp.otp == otp_code and (timezone.now() - otp.created_at) < timedelta(minutes=5):
-                    user.is_active = True
-                    user.save()
-                    otp.is_active = False
-                    otp.save()
+                success, msg = user_service.verify_otp(user, form.cleaned_data['otp'])
+                if success:
+                    user_service.activate_user(user)
                     login(request, user, backend='django.contrib.auth.backends.ModelBackend')
                     return redirect('userlog:user_login')
-                else:
-                    message = 'Invalid OTP or OTP has expired.'
-        elif 'resend' in request.POST:
-            otp = OTP.objects.filter(user=user, is_active=True).first()
-            if otp and (timezone.now() - otp.created_at) < timedelta(minutes=5):
-                message = 'OTP was sent recently. Please wait for a while before requesting again.'
+                message = msg
             else:
-                if otp:
-                    otp.is_active = False
-                    otp.save()
-                otp = OTP.objects.create(user=user)
-                send_otp_via_email(user.email, otp.otp)
-                message = 'A new OTP has been sent to your email.'
-    else:
-        form = OTPForm()
-    
-    return render(request, 'user_log/verify_otp.html', {'form': form, 'message': message})
+                message = "Invalid OTP format."
+        elif 'resend' in request.POST:
+            if user_service.can_resend_otp(user):
+                try:
+                    user_service.create_and_send_otp(user)
+                    message = "A new OTP has been sent to your email."
+                except Exception:
+                    logger.exception("Failed to resend OTP for user %s", user.id)
+                    message = "Failed to send OTP. Please try again."
+            else:
+                message = "OTP was sent recently. Please wait before requesting again."
 
-
-def send_otp_via_email(email, otp):
-    subject = 'Your OTP Code'
-    message = f'Your OTP code is {otp}. It is valid for 5 minutes.'
-    email_from = settings.EMAIL_HOST_USER
-    recipient_list = [email]
-    try:
-        send_mail(subject, message, email_from, recipient_list)
-        logger.info(f"OTP email sent to {email}")
-    except Exception as e:
-        logger.error(f"Failed to send OTP email to {email}. Error: {str(e)}")
+    return render(request, 'user_log/verify_otp.html', {'form': OTPForm(), 'message': message})
 
 
 @cache_control(no_cache=True, must_revalidate=True, no_store=True)
 def user_login(request):
+    if request.user.is_authenticated:
+        return redirect('userlog:index')
+
     if request.method == 'POST':
         form = AccountAuthenticationForm(request.POST)
         if form.is_valid():
@@ -127,17 +97,18 @@ def user_login(request):
             password = form.cleaned_data['password']
             try:
                 user = Account.objects.get(email=email)
-                if user.check_password(password):
-                    # Specify the backend when logging in
+                if not user.check_password(password):
+                    messages.error(request, "Invalid email or password.")
+                elif not user.is_active:
+                    messages.error(request, "Your account has been blocked. Contact support.")
+                else:
                     login(request, user, backend='django.contrib.auth.backends.ModelBackend')
                     return redirect('userlog:index')
-                else:
-                    form.add_error(None, "Invalid email or password")
             except Account.DoesNotExist:
-                form.add_error(None, "Invalid email or password")
+                messages.error(request, "Invalid email or password.")
     else:
         form = AccountAuthenticationForm()
-    
+
     return render(request, 'user_log/user_login.html', {'form': form})
 
 
@@ -145,255 +116,200 @@ def user_login(request):
 def user_logout(request):
     logout(request)
     request.session.flush()
-    return redirect('userlog:index') 
+    return redirect('userlog:index')
 
 
-#======================================= USER SIGNUP,LOGIN,LOGOUT END======================================================#
+# ─── Forgot Password ──────────────────────────────────────────────────────────
+
+def forgot_password(request):
+    if request.method == 'POST':
+        email = request.POST.get('email', '').strip()
+        try:
+            user = Account.objects.get(email=email)
+            user_service.create_and_send_otp(user)
+            request.session['reset_email'] = email
+            return redirect('userlog:verify_otp_forgot_password')
+        except Account.DoesNotExist:
+            messages.error(request, "No account found with this email address.")
+        except Exception:
+            logger.exception("Error in forgot_password for %s", email)
+            messages.error(request, "Failed to send OTP. Please try again.")
+
+    return render(request, 'user_log/forgot_password.html')
 
 
-#======================================= USER PRODUCTS START======================================================#
+def verify_otp_forgot_password(request):
+    email = request.session.get('reset_email')
+    if not email:
+        return redirect('userlog:forgot_password')
 
+    try:
+        user = Account.objects.get(email=email)
+    except Account.DoesNotExist:
+        messages.error(request, "Session expired. Please try again.")
+        return redirect('userlog:forgot_password')
+
+    if request.method == 'POST':
+        entered_otp = request.POST.get('otp', '').strip()
+        success, msg = user_service.verify_otp(user, entered_otp)
+        if success:
+            request.session['otp_verified'] = True
+            return redirect('userlog:reset_password')
+        messages.error(request, msg)
+
+    return render(request, 'user_log/verify_otp_forgot_password.html')
+
+
+def reset_password(request):
+    if 'reset_email' not in request.session or not request.session.get('otp_verified'):
+        return redirect('userlog:forgot_password')
+
+    try:
+        user = Account.objects.get(email=request.session['reset_email'])
+    except Account.DoesNotExist:
+        return redirect('userlog:forgot_password')
+
+    if request.method == 'POST':
+        password = request.POST.get('password', '')
+        confirm = request.POST.get('confirm_password', '')
+        if password != confirm:
+            messages.error(request, "Passwords do not match.")
+        elif len(password) < 8:
+            messages.error(request, "Password must be at least 8 characters.")
+        else:
+            try:
+                user_service.reset_user_password(user, password)
+                request.session.pop('reset_email', None)
+                request.session.pop('otp_verified', None)
+                messages.success(request, "Password reset successfully.")
+                return redirect('userlog:user_login')
+            except Exception:
+                logger.exception("Error resetting password for user %s", user.id)
+                messages.error(request, "Failed to reset password.")
+
+    return render(request, 'user_log/reset_password.html')
+
+
+# ─── Products ─────────────────────────────────────────────────────────────────
 
 def user_products(request):
+    from product_management.models import Category
     try:
-        full_products_queryset = Product.objects.filter(deleted=False).prefetch_related('variants', 'category')
-        categories = Category.objects.filter(is_deleted=False)
-        new_products = Product.objects.filter(deleted=False).order_by('-id')[:3]
-
-        # Annotate queryset with offer information
-        full_products_queryset = full_products_queryset.annotate(
-            product_discount=Subquery(
-                ProductOffer.objects.filter(
-                    product=OuterRef('pk'),
-                    offer__is_active=True,
-                    offer__start_date__lte=timezone.now(),
-                    offer__end_date__gte=timezone.now()
-                ).order_by('-offer__discount_percentage').values('offer__discount_percentage')[:1]
-            ),
-            product_offer_name=Subquery(
-                ProductOffer.objects.filter(
-                    product=OuterRef('pk'),
-                    offer__is_active=True,
-                    offer__start_date__lte=timezone.now(),
-                    offer__end_date__gte=timezone.now()
-                ).order_by('-offer__discount_percentage').values('offer__name')[:1]
-            ),
-            category_discount=Subquery(
-                CategoryOffer.objects.filter(
-                    category=OuterRef('category'),
-                    offer__is_active=True,
-                    offer__start_date__lte=timezone.now(),
-                    offer__end_date__gte=timezone.now()
-                ).order_by('-offer__discount_percentage').values('offer__discount_percentage')[:1]
-            ),
-            category_offer_name=Subquery(
-                CategoryOffer.objects.filter(
-                    category=OuterRef('category'),
-                    offer__is_active=True,
-                    offer__start_date__lte=timezone.now(),
-                    offer__end_date__gte=timezone.now()
-                ).order_by('-offer__discount_percentage').values('offer__name')[:1]
-            ),
-            best_discount=Greatest(
-                Coalesce(F('product_discount'), Value(0, output_field=DecimalField())),
-                Coalesce(F('category_discount'), Value(0, output_field=DecimalField())),
-                output_field=DecimalField()
-            ),
-            min_variant_price=Min('variants__price'),
-            discounted_price=ExpressionWrapper(
-                F('min_variant_price') * (1 - F('best_discount') / 100),
-                output_field=DecimalField(max_digits=10, decimal_places=2)
-            )
-        )
-
-        # Search functionality
-        search_query = request.GET.get('search', '')
-        if search_query:
-            full_products_queryset = full_products_queryset.filter(
-                Q(title__icontains=search_query) |
-                Q(category__name__icontains=search_query)
-            )
-
-        # Category filter
-        category = request.GET.get('category')
-        if category:
-            full_products_queryset = full_products_queryset.filter(category__name=category)
-
-        # Sorting
+        queryset = product_service.get_annotated_products_queryset()
+        search_query = request.GET.get('search', '').strip()
+        category_name = request.GET.get('category', '').strip()
         sort_by = request.GET.get('sort_by', 'featured')
-        if sort_by == 'name_asc':
-            full_products_queryset = full_products_queryset.order_by('title')
-        elif sort_by == 'name_desc':
-            full_products_queryset = full_products_queryset.order_by('-title')
-        elif sort_by == 'price_asc':
-            full_products_queryset = full_products_queryset.annotate(
-                min_price=Min('variants__price')
-            ).order_by('min_price')
-        elif sort_by == 'price_desc':
-            full_products_queryset = full_products_queryset.annotate(
-                max_price=Max('variants__price')
-            ).order_by('-max_price')
-        else:
-            # Default ordering when no specific sorting is applied
-            full_products_queryset = full_products_queryset.order_by('id')
 
-        # Ensure we have unique products
-        full_products_queryset = full_products_queryset.distinct()
+        queryset = product_service.apply_filters(queryset, search_query, category_name, sort_by)
+        total_count = queryset.count()
 
-        # Pagination
-        paginator = Paginator(full_products_queryset, 6)  # Show 6 products per page
-        page = request.GET.get('page')
-        try:
-            products = paginator.page(page)
-        except PageNotAnInteger:
-            products = paginator.page(1)
-        except EmptyPage:
-            products = paginator.page(paginator.num_pages)
+        page_obj = product_service.paginate_queryset(queryset, request.GET.get('page'))
+        product_service.enrich_products_with_offer_data(page_obj)
 
-        # Process each product after pagination
-        for product in products:
-            variant = product.variants.filter(is_active=True).first()
-            if variant:
-                product.original_price = product.min_variant_price
-                product.discounted_price = product.discounted_price
-                
-                if product.best_discount > 0:
-                    offer_name = product.product_offer_name if product.product_discount is not None else product.category_offer_name
-                    product.active_offer = {
-                        'discount_percentage': product.best_discount,
-                        'name': offer_name,
-                        'is_product_offer': product.product_discount is not None,
-                        'is_category_offer': product.category_discount is not None
-                    }
-                else:
-                    product.active_offer = None
+        categories = Category.objects.filter(is_deleted=False, is_active=True)
+        new_products = product_service.get_annotated_products_queryset().order_by('-id')[:3]
 
-                # Ensure prices are Decimal objects
-                product.original_price = Decimal(product.original_price).quantize(Decimal('0.01'))
-                product.discounted_price = Decimal(product.discounted_price).quantize(Decimal('0.01'))
-            else:
-                product.original_price = None
-                product.discounted_price = None
-                product.active_offer = None
-
-        context = {
-            'products': products,
+        return render(request, 'user_log/user_products.html', {
+            'products': page_obj,
             'categories': categories,
             'search_query': search_query,
-            'selected_category': category,
+            'selected_category': category_name,
             'sort_by': sort_by,
             'new_products': new_products,
-            'total_product_count': full_products_queryset.count(),
-        }
-        return render(request, 'user_log/user_products.html', context)
-
-    except Exception as e:
-        # Log the error or return an error response
-        print(f"Error in user_products view: {e}")
-        return render(request, 'user_log/error.html', {'error': str(e)})
+            'total_product_count': total_count,
+        })
+    except Exception:
+        logger.exception("Error loading user products page")
+        messages.error(request, "Something went wrong. Please try again.")
+        return render(request, 'user_log/user_products.html', {'products': [], 'categories': []})
 
 
 def product_details(request, product_id):
-    product = get_object_or_404(Product, id=product_id, deleted=False)
-    
-    # Annotate the product with the best available discount (product or category)
-    product = Product.objects.filter(id=product_id, deleted=False).annotate(
-        product_discount=Subquery(
-            ProductOffer.objects.filter(
-                product=OuterRef('pk'),
-                offer__is_active=True,
-                offer__start_date__lte=timezone.now(),
-                offer__end_date__gte=timezone.now()
-            ).order_by('-offer__discount_percentage').values('offer__discount_percentage')[:1]
-        ),
-        category_discount=Subquery(
-            CategoryOffer.objects.filter(
-                category=OuterRef('category'),
-                offer__is_active=True,
-                offer__start_date__lte=timezone.now(),
-                offer__end_date__gte=timezone.now()
-            ).order_by('-offer__discount_percentage').values('offer__discount_percentage')[:1]
-        ),
-        best_discount=Greatest(
-            Coalesce(F('product_discount'), Value(0, output_field=DecimalField())),
-            Coalesce(F('category_discount'), Value(0, output_field=DecimalField())),
-            output_field=DecimalField()
-        )
-    ).first()
-    
-    variants = product.variants.filter(deleted=False)
-    
-    # Default selected color variant (e.g., the first variant)
-    selected_variant = variants.first() if variants.exists() else None
-    
-    if selected_variant:
-        # Calculate the original price and discounted price
-        original_price = selected_variant.price
-        discount_percentage = product.best_discount or Decimal(0)
-        discounted_price = original_price * (1 - discount_percentage / 100)
-        
-        # Ensure prices are rounded to 2 decimal places
-        original_price = Decimal(original_price).quantize(Decimal('0.01'))
-        discounted_price = Decimal(discounted_price).quantize(Decimal('0.01'))
-        
-        images = [selected_variant.image1, selected_variant.image2, selected_variant.image3]
-    else:
+    from product_management.models import Product
+    from cart.models import WishlistItem
+    from services.offer_service import (
+        get_best_offer_for_product,
+        apply_offer_to_price,
+        get_discount_percentage_for_product,
+    )
+    from decimal import Decimal
+
+    try:
+        product = get_object_or_404(Product, id=product_id, deleted=False, is_active=True)
+        variants = product.variants.filter(deleted=False, is_active=True).select_related('color')
+        selected_variant = variants.first()
+
         original_price = None
         discounted_price = None
-        images = []
+        discount_percentage = Decimal('0')
 
-    # Fetch similar products (same category, excluding the current product)
-    similar_products = Product.objects.filter(
-        category=product.category, deleted=False
-    ).exclude(id=product.id)[:4]  # Display up to 4 similar products
+        if selected_variant:
+            original_price = selected_variant.price
+            discount_percentage = get_discount_percentage_for_product(product)
+            discounted_price = apply_offer_to_price(
+                original_price, get_best_offer_for_product(product)
+            )
 
-    # Get all variant IDs in the wishlist for this product
-    wishlist_variant_ids = WishlistItem.objects.filter(
-        wishlist__user=request.user, 
-        product_variant__product_id=product_id
-    ).values_list('product_variant_id', flat=True) if request.user.is_authenticated else []
+        # Attach offer price to each variant for JS data attributes
+        for variant in variants:
+            variant.offer_price = apply_offer_to_price(
+                variant.price, get_best_offer_for_product(product)
+            )
 
-    context = {
-        'product': product,
-        'variants': variants,
-        'selected_variant': selected_variant,
-        'images': images,
-        'similar_products': similar_products,
-        'original_price': original_price,
-        'discounted_price': discounted_price,
-        'discount_percentage': discount_percentage,
-        'wishlist_variant_ids': list(wishlist_variant_ids),
-    }
-    return render(request, 'user_log/product_details.html', context)
+        similar_products = Product.objects.filter(
+            category=product.category, deleted=False, is_active=True
+        ).exclude(id=product.id).prefetch_related('variants')[:4]
+
+        wishlist_variant_ids = []
+        if request.user.is_authenticated:
+            wishlist_variant_ids = list(
+                WishlistItem.objects.filter(
+                    wishlist__user=request.user,
+                    product_variant__product_id=product_id,
+                ).values_list('product_variant_id', flat=True)
+            )
+
+        return render(request, 'user_log/product_details.html', {
+            'product': product,
+            'variants': variants,
+            'selected_variant': selected_variant,
+            'similar_products': similar_products,
+            'original_price': original_price,
+            'discounted_price': discounted_price,
+            'discount_percentage': discount_percentage,
+            'wishlist_variant_ids': wishlist_variant_ids,
+        })
+    except Exception:
+        logger.exception("Error loading product %s", product_id)
+        messages.error(request, "Product not found or unavailable.")
+        return redirect('userlog:user_products')
 
 
-#======================================= USER PRODUCT END======================================================#
-
-
-#======================================= USER PROFILE START======================================================#
-
+# ─── Profile ──────────────────────────────────────────────────────────────────
 
 @login_required
 def user_profile(request):
-    user = request.user
-    addresses = Address.objects.filter(account=user)
-    
+    addresses = Address.objects.filter(account=request.user)
+
     if request.method == 'POST':
         address_form = AddressForm(request.POST)
         if address_form.is_valid():
-            address = address_form.save(commit=False)
-            address.account = user
-            address.save()
-            return redirect('userlog:user_profile')
+            try:
+                address = address_form.save(commit=False)
+                address.account = request.user
+                address.save()
+                messages.success(request, "Address added successfully.")
+                return redirect('userlog:user_profile')
+            except Exception:
+                logger.exception("Error saving address for user %s", request.user.id)
+                messages.error(request, "Failed to save address.")
     else:
         address_form = AddressForm()
-    
-    context = {
-        'user': user,
+
+    return render(request, 'user_log/user_profile.html', {
         'addresses': addresses,
         'address_form': address_form,
-    }
-    return render(request, 'user_log/user_profile.html', context)
+    })
 
 
 @login_required
@@ -401,31 +317,37 @@ def edit_user_profile(request):
     if request.method == 'POST':
         form = AccountUpdateForm(request.POST, request.FILES, instance=request.user)
         if form.is_valid():
-            form.save()
-            return redirect('userlog:user_profile')
+            try:
+                form.save()
+                messages.success(request, "Profile updated successfully.")
+                return redirect('userlog:user_profile')
+            except Exception:
+                logger.exception("Error updating profile for user %s", request.user.id)
+                messages.error(request, "Failed to update profile.")
     else:
         form = AccountUpdateForm(instance=request.user)
-    
+
     return render(request, 'user_log/user_detail_update.html', {'form': form})
 
 
 @login_required
 def edit_address(request, address_id):
     address = get_object_or_404(Address, id=address_id, account=request.user)
-    
+
     if request.method == 'POST':
-        address_form = AddressForm(request.POST, instance=address)
-        if address_form.is_valid():
-            address_form.save()
-            return redirect('userlog:user_profile')
+        form = AddressForm(request.POST, instance=address)
+        if form.is_valid():
+            try:
+                form.save()
+                messages.success(request, "Address updated.")
+                return redirect('userlog:user_profile')
+            except Exception:
+                logger.exception("Error updating address %s", address_id)
+                messages.error(request, "Failed to update address.")
     else:
-        address_form = AddressForm(instance=address)
-    
-    context = {
-        'address_form': address_form,
-        'address': address,
-    }
-    return render(request, 'user_log/edit_address.html', context)
+        form = AddressForm(instance=address)
+
+    return render(request, 'user_log/edit_address.html', {'address_form': form, 'address': address})
 
 
 @login_required
@@ -433,256 +355,179 @@ def delete_address(request, address_id):
     address = get_object_or_404(Address, id=address_id, account=request.user)
     if request.method == 'POST':
         address.delete()
-        return redirect('userlog:user_profile')
+        messages.success(request, "Address deleted.")
     return redirect('userlog:user_profile')
 
 
-def forgot_password(request):
-    if request.method == "POST":
-        email = request.POST["email"]
-        try:
-            user = Account.objects.get(email=email)
-            otp = OTP.objects.create(user=user)
-            send_otp_via_email(user.email, otp.otp)
-            request.session['reset_email'] = email
-            return redirect('userlog:verify_otp_forgot_password')
-        except Account.DoesNotExist:
-            messages.error(request, "No account found with this email address.")
-    return render(request, 'user_log/forgot_password.html')
-
-
-def verify_otp_forgot_password(request):
-    if 'reset_email' not in request.session:
-        return redirect('userlog:forgot_password')
-    
-    email = request.session['reset_email']
-    user = Account.objects.get(email=email)
-    
-    if request.method == "POST":
-        entered_otp = request.POST.get('otp')
-        otp = OTP.objects.filter(user=user, is_active=True).first()
-        
-        if otp and otp.otp == entered_otp and (timezone.now() - otp.created_at) < timedelta(minutes=5):
-            otp.is_active = False
-            otp.save()
-            request.session['otp_verified'] = True
-            return redirect('userlog:reset_password')
-        else:
-            messages.error(request, "Invalid OTP or OTP has expired.")
-    
-    return render(request, 'user_log/verify_otp_forgot_password.html')
-
-
-def reset_password(request):
-    if 'reset_email' not in request.session or 'otp_verified' not in request.session:
-        return redirect('userlog:forgot_password')
-    
-    email = request.session['reset_email']
-    user = Account.objects.get(email=email)
-    
-    if request.method == "POST":
-        password = request.POST.get('password')
-        confirm_password = request.POST.get('confirm_password')
-        
-        if password == confirm_password:
-            user.set_password(password)
-            user.save()
-            del request.session['reset_email']
-            del request.session['otp_verified']
-            messages.success(request, "Password has been reset successfully.")
-            return redirect('userlog:user_login')
-        else:
-            messages.error(request, "Passwords do not match.")
-    
-    return render(request, 'user_log/reset_password.html')
-
-
-def send_otp_via_email(email, otp):
-    subject = 'OTP Verification'
-    message = f'Your OTP  is {otp}. It is valid for 5 minutes.'
-    email_from = settings.EMAIL_HOST_USER
-    recipient_list = [email]
-    send_mail(subject, message, email_from, recipient_list)
-
-
-def user_orders(request):
-    return render(request,'user_log/user_orders.html')
-
-
+@login_required
 def update_email(request):
     if request.method == 'POST':
-        form = EmailUpdateForm(request.POST, instance=request.user)
+        form = EmailUpdateForm(request.POST)
         if form.is_valid():
-            user = form.save(commit=False)
-            new_email = form.cleaned_data.get('new_email')
-
-            # Create a new OTP instance
-            otp_code = ''.join(random.choices(string.digits, k=6))  # Generate a 6-digit OTP
-            otp_instance = OTP.objects.create(user=user, otp=otp_code)
-
-            # Send OTP to the new email address
-            send_otp_via_email(new_email, otp_instance.otp)
-
-            # Store the new email in session or some temporary place to verify it later
-            request.session['new_email'] = new_email
-
-            messages.success(request, 'OTP has been sent to your new email address. Please verify.')
-            return redirect('userlog:verify_otp_email_update')  # Redirect to the OTP verification page
+            new_email = form.cleaned_data['new_email']
+            try:
+                user_service.initiate_email_update(request.user, new_email)
+                request.session['new_email'] = new_email
+                messages.success(request, "OTP sent to your new email address.")
+                return redirect('userlog:verify_otp_email_update')
+            except ValueError as e:
+                messages.error(request, str(e))
+            except Exception:
+                logger.exception("Error initiating email update for user %s", request.user.id)
+                messages.error(request, "Failed to send OTP. Please try again.")
     else:
-        form = EmailUpdateForm(instance=request.user)
-    
+        form = EmailUpdateForm()
+
     return render(request, 'user_log/update_email.html', {'form': form})
 
 
+@login_required
 def verify_otp_email_update(request):
     if request.method == 'POST':
         form = OTPForm(request.POST)
         if form.is_valid():
-            otp_input = form.cleaned_data['otp']
-            try:
-                otp_instance = OTP.objects.get(user=request.user, otp=otp_input, is_active=True)
-                # Optionally check if OTP is within the valid time window (e.g., 5 minutes)
-
-                # Update the user's email address
-                new_email = request.session.get('new_email')
-                if new_email:
-                    request.user.email = new_email
-                    request.user.save()
-
-                    # Deactivate the OTP
-                    otp_instance.is_active = False
-                    otp_instance.save()
-
-                    # Clear the session
-                    del request.session['new_email']
-
-                    messages.success(request, 'Your email has been updated successfully.')
+            success, msg = user_service.verify_otp(request.user, form.cleaned_data['otp'])
+            if success:
+                try:
+                    user_service.confirm_email_update(request.user)
+                    request.session.pop('new_email', None)
+                    messages.success(request, "Email updated successfully.")
                     return redirect('userlog:user_profile')
-                else:
-                    messages.error(request, 'No new email found in the session.')
-
-            except OTP.DoesNotExist:
-                messages.error(request, 'Invalid or expired OTP.')
+                except ValueError as e:
+                    messages.error(request, str(e))
+                except Exception:
+                    logger.exception("Error confirming email update for user %s", request.user.id)
+                    messages.error(request, "Failed to update email.")
+            else:
+                messages.error(request, msg)
     else:
         form = OTPForm()
-    
+
     return render(request, 'user_log/verify_otp.html', {'form': form})
 
 
+# ─── Password Reset (logged in) ───────────────────────────────────────────────
+
+@login_required
 def reset_password_request(request):
-    if request.method == "POST":
-        email = request.POST.get("email")
-        old_password = request.POST.get("old_password")
-        
-        try:
-            user = Account.objects.get(email=email)
-            if authenticate(email=email, password=old_password):
-                otp = OTP.objects.create(user=user)
-                send_otp_via_email(user.email, otp.otp)
-                request.session['reset_email'] = email
+    if request.method == 'POST':
+        old_password = request.POST.get('old_password', '')
+        user = authenticate(request, email=request.user.email, password=old_password)
+        if user:
+            try:
+                user_service.create_and_send_otp(user)
+                request.session['reset_email'] = user.email
                 return redirect('userlog:reset_password_verify_otp')
-            else:
-                messages.error(request, "Invalid email or password.")
-        except Account.DoesNotExist:
-            messages.error(request, "No account found with this email address.")
-    
+            except Exception:
+                logger.exception("Error sending OTP for password reset, user %s", request.user.id)
+                messages.error(request, "Failed to send OTP.")
+        else:
+            messages.error(request, "Current password is incorrect.")
+
     return render(request, 'user_log/reset_password_request.html')
 
 
+@login_required
 def reset_password_verify_otp(request):
-    if 'reset_email' not in request.session:
+    email = request.session.get('reset_email')
+    if not email:
         return redirect('userlog:reset_password_request')
-    
-    email = request.session['reset_email']
-    user = Account.objects.get(email=email)
-    
-    if request.method == "POST":
-        entered_otp = request.POST.get('otp')
-        otp = OTP.objects.filter(user=user, is_active=True).first()
-        
-        if otp and otp.otp == entered_otp and (timezone.now() - otp.created_at) < timedelta(minutes=5):
-            otp.is_active = False
-            otp.save()
+
+    try:
+        user = Account.objects.get(email=email)
+    except Account.DoesNotExist:
+        return redirect('userlog:reset_password_request')
+
+    if request.method == 'POST':
+        success, msg = user_service.verify_otp(user, request.POST.get('otp', '').strip())
+        if success:
             request.session['otp_verified'] = True
             return redirect('userlog:reset_password_set_new')
-        else:
-            messages.error(request, "Invalid OTP or OTP has expired.")
-    
+        messages.error(request, msg)
+
     return render(request, 'user_log/reset_password_verify_otp.html')
 
 
+@login_required
 def reset_password_set_new(request):
-    if 'reset_email' not in request.session or 'otp_verified' not in request.session:
+    if 'reset_email' not in request.session or not request.session.get('otp_verified'):
         return redirect('userlog:reset_password_request')
-    
-    email = request.session['reset_email']
-    user = Account.objects.get(email=email)
-    
-    if request.method == "POST":
-        new_password = request.POST.get('new_password')
-        confirm_password = request.POST.get('confirm_password')
-        
-        if new_password == confirm_password:
-            user.set_password(new_password)
-            user.save()
-            del request.session['reset_email']
-            del request.session['otp_verified']
-            messages.success(request, "Password has been reset successfully.")
-            return redirect('userlog:user_login')
-        else:
+
+    try:
+        user = Account.objects.get(email=request.session['reset_email'])
+    except Account.DoesNotExist:
+        return redirect('userlog:reset_password_request')
+
+    if request.method == 'POST':
+        new_password = request.POST.get('new_password', '')
+        confirm = request.POST.get('confirm_password', '')
+        if new_password != confirm:
             messages.error(request, "Passwords do not match.")
-    
+        elif len(new_password) < 8:
+            messages.error(request, "Password must be at least 8 characters.")
+        else:
+            try:
+                user_service.reset_user_password(user, new_password)
+                request.session.pop('reset_email', None)
+                request.session.pop('otp_verified', None)
+                messages.success(request, "Password updated successfully.")
+                return redirect('userlog:user_login')
+            except Exception:
+                logger.exception("Error setting new password for user %s", user.id)
+                messages.error(request, "Failed to update password.")
+
     return render(request, 'user_log/reset_password_set_new.html')
 
 
-#======================================= USER PROFILE END======================================================#
-
-
-#======================================= USER ORDERS START======================================================#
-
+# ─── Orders ───────────────────────────────────────────────────────────────────
 
 @login_required
 def user_orders(request):
-    orders = Order.objects.filter(user=request.user).order_by('-created_at')
-    context = {
-        'orders': orders,
-    }
-    return render(request, 'user_log/user_orders.html', context)
+    from orders.models import Order
+    orders = Order.objects.filter(
+        user=request.user, is_ordered=True
+    ).select_related('payment').order_by('-created_at')
+
+    return render(request, 'user_log/user_orders.html', {'orders': orders})
 
 
 @login_required
 def order_details(request, order_id):
+    from orders.models import Order, OrderProduct
     order = get_object_or_404(Order, id=order_id, user=request.user)
-    order_items = OrderProduct.objects.filter(order=order)
-    
-    # Calculate total price for each item
+    order_items = OrderProduct.objects.filter(order=order).select_related(
+        'product_variant__product', 'product_variant__color'
+    )
     for item in order_items:
         item.total_price = item.product_price * item.quantity
-    context = {
+
+    return render(request, 'user_log/user_order_details.html', {
         'order': order,
         'order_items': order_items,
-    }
-    return render(request, 'user_log/user_order_details.html', context)
+    })
 
 
 @login_required
 def cancel_order(request, order_id):
-    # Get the order and ensure it belongs to the logged-in user
+    from orders.models import Order
+    from orders.forms import CancelOrderForm
+    from services.order_service import request_cancellation, OrderError
+
     order = get_object_or_404(Order, id=order_id, user=request.user)
-    
+
     if request.method == 'POST':
         form = CancelOrderForm(request.POST)
         if form.is_valid():
             reason = form.cleaned_data.get('reason') or form.cleaned_data.get('custom_reason')
-            
-            # Set the cancellation request
-            order.cancel_reason = reason
-            order.status = 'Pending Cancellation'
-            order.is_cancel_requested = True
-            order.save()
-            
-            messages.success(request, "Your cancellation request has been submitted. Please wait for admin confirmation.")
-            return redirect('userlog:user_orders')
+            try:
+                request_cancellation(order, reason)
+                messages.success(request, "Cancellation request submitted.")
+                return redirect('userlog:user_orders')
+            except OrderError as e:
+                messages.error(request, str(e))
+            except Exception:
+                logger.exception("Error cancelling order %s", order_id)
+                messages.error(request, "Failed to submit cancellation.")
     else:
         form = CancelOrderForm()
 
@@ -691,63 +536,40 @@ def cancel_order(request, order_id):
 
 @login_required
 def return_order(request, order_id):
+    from orders.models import Order
+    from orders.forms import ReturnRequestForm
+    from services.order_service import request_return, OrderError
+
     order = get_object_or_404(Order, id=order_id, user=request.user)
-    
-    # Check if a return request already exists for this order
-    existing_request = ReturnRequest.objects.filter(order=order).first()
-    if existing_request:
-        messages.info(request, "A return request for this order already exists.")
-        return redirect('userlog:user_orders')
-    
-    if order.status != 'Delivered':
-        messages.error(request, "You can only return orders that have been delivered.")
-        return redirect('userlog:user_orders')
-    
+
     if request.method == 'POST':
         form = ReturnRequestForm(request.POST)
         if form.is_valid():
-            return_request = form.save(commit=False)
-            return_request.order = order
-            return_request.user = request.user
-            return_request.save()
-            
-            order.status = 'Return Requested'
-            order.save()
-            
-            messages.success(request, "Your return request has been submitted and is pending approval.")
-            return redirect('userlog:user_orders')
+            try:
+                request_return(order, request.user, form.cleaned_data['reason'])
+                messages.success(request, "Return request submitted.")
+                return redirect('userlog:user_orders')
+            except OrderError as e:
+                messages.error(request, str(e))
+            except Exception:
+                logger.exception("Error submitting return for order %s", order_id)
+                messages.error(request, "Failed to submit return request.")
     else:
         form = ReturnRequestForm()
-    
-    context = {
-        'order': order,
-        'form': form,
-    }
-    return render(request, 'user_log/return_request_form.html', context)
+
+    return render(request, 'user_log/return_request_form.html', {'order': order, 'form': form})
 
 
-#======================================= USER ORDERS END======================================================#
-
-
-#======================================= USER WALLET START======================================================#
-
+# ─── Wallet ────────────────────────────────────────────────────────────────────
 
 @login_required
 def wallet(request):
-    wallet, created = Wallet.objects.get_or_create(user=request.user)
-    wallet_history = WalletHistory.objects.filter(wallet=wallet).order_by('-created_at')
+    try:
+        balance = wallet_service.get_balance(request.user)
+        history = wallet_service.get_transaction_history(request.user)
+    except Exception:
+        logger.exception("Error loading wallet for user %s", request.user.id)
+        balance = 0
+        history = []
 
-    # Calculate balance by iterating over transactions
-    balance = 0
-    for transaction in wallet_history:
-        if transaction.type == 'Refund':  # Add positive amounts (like refunds)
-            balance += transaction.amount
-        else:  # Subtract negative amounts (like payments)
-            balance -= transaction.amount
-    
-    context = {
-        'wallet': wallet,
-        'balance': balance,
-        'wallethistory': wallet_history,
-    }
-    return render(request, 'user_log/wallet.html', context)
+    return render(request, 'user_log/wallet.html', {'balance': balance, 'wallethistory': history})
