@@ -10,7 +10,7 @@ class CouponError(Exception):
 
 
 def get_active_coupon(code):
-    from apps.coupon.models import Coupon
+    from coupon.models import Coupon
     try:
         coupon = Coupon.objects.get(code=code, active=True)
         if not coupon.is_valid():
@@ -86,7 +86,7 @@ def clear_session_coupon(request):
 
 
 def record_coupon_usage(order, coupon, discount_amount):
-    from apps.coupon.models import CouponUsage
+    from coupon.models import CouponUsage
     # Guard against duplicates
     if CouponUsage.objects.filter(order=order, coupon=coupon).exists():
         logger.warning("Coupon usage already recorded for order %s", order.id)

@@ -12,7 +12,7 @@ class CartError(Exception):
 
 
 def get_or_create_cart(user):
-    from apps.cart.models import Cart
+    from cart.models import Cart
     cart, _ = Cart.objects.get_or_create(user=user)
     return cart
 
@@ -22,7 +22,7 @@ def get_cart_total(cart):
 
 
 def add_item(user, product_variant, quantity=1):
-    from apps.cart.models import CartItem
+    from cart.models import CartItem
 
     if quantity <= 0:
         raise CartError("Quantity must be at least 1.")
@@ -55,7 +55,7 @@ def add_item(user, product_variant, quantity=1):
 
 
 def remove_item(user, cart_item_id):
-    from apps.cart.models import CartItem
+    from cart.models import CartItem
     try:
         item = CartItem.objects.get(id=cart_item_id, cart__user=user)
         item.delete()
@@ -65,7 +65,7 @@ def remove_item(user, cart_item_id):
 
 
 def update_quantity(user, cart_item_id, new_quantity):
-    from apps.cart.models import CartItem
+    from cart.models import CartItem
 
     if new_quantity < 1:
         raise CartError("Quantity must be at least 1.")

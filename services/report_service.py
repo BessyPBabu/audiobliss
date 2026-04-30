@@ -27,7 +27,7 @@ def get_date_range(report_type, start_date_str=None, end_date_str=None):
 
 
 def get_orders_for_range(start_date, end_date):
-    from apps.orders.models import Order
+    from orders.models import Order
     return Order.objects.filter(
         created_at__date__range=[start_date, end_date],
         is_ordered=True,
@@ -35,7 +35,7 @@ def get_orders_for_range(start_date, end_date):
 
 
 def calculate_metrics(orders):
-    from apps.coupon.models import CouponUsage
+    from coupon.models import CouponUsage
     total_count = orders.count()
     total_amount = orders.aggregate(total=Sum('order_total'))['total'] or 0
     order_ids = list(orders.values_list('id', flat=True))
@@ -51,8 +51,8 @@ def calculate_metrics(orders):
 
 
 def build_order_data(orders_page):
-    from apps.orders.models import OrderProduct
-    from apps.coupon.models import CouponUsage
+    from orders.models import OrderProduct
+    from coupon.models import CouponUsage
     order_data = []
 
     for order in orders_page:
@@ -78,7 +78,7 @@ def build_order_data(orders_page):
 
 
 def get_dashboard_chart_data():
-    from apps.orders.models import Order, OrderProduct
+    from orders.models import Order, OrderProduct
     today = timezone.now().date()
 
     def get_range_data(days):

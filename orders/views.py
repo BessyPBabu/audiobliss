@@ -14,8 +14,7 @@ logger = logging.getLogger(__name__)
 
 @login_required
 def success(request):
-    # Coupon usage is recorded in coupon/views.py apply_coupon — not here
-    # to avoid duplicate records
+    
     latest_order = Order.objects.filter(
         user=request.user, is_ordered=True
     ).order_by('-created_at').first()

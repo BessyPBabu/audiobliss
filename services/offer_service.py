@@ -6,7 +6,7 @@ logger = logging.getLogger(__name__)
 
 
 def get_best_offer_for_product(product):
-    from apps.offers.models import ProductOffer, CategoryOffer
+    from offer_management.models import ProductOffer, CategoryOffer
     now = timezone.now()
 
     product_offers = ProductOffer.objects.filter(

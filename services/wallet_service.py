@@ -9,7 +9,7 @@ TRANSACTION_PAYMENT = 'Wallet Payment'
 
 
 def get_or_create_wallet(user):
-    from apps.users.models import Wallet
+    from user_log.models import Wallet
     wallet, _ = Wallet.objects.get_or_create(user=user)
     return wallet
 
@@ -20,7 +20,7 @@ def get_balance(user):
 
 
 def credit(user, amount, transaction_type=TRANSACTION_REFUND):
-    from apps.users.models import WalletHistory
+    from user_log.models import WalletHistory
     amount = Decimal(str(amount))
     if amount <= 0:
         raise ValueError(f"Credit amount must be positive, got {amount}")
@@ -35,7 +35,7 @@ def credit(user, amount, transaction_type=TRANSACTION_REFUND):
 
 
 def debit(user, amount, transaction_type=TRANSACTION_PAYMENT):
-    from apps.users.models import WalletHistory
+    from user_log.models import WalletHistory
     amount = Decimal(str(amount))
     if amount <= 0:
         raise ValueError(f"Debit amount must be positive, got {amount}")
@@ -57,6 +57,6 @@ def can_pay_with_wallet(user, amount):
 
 
 def get_transaction_history(user):
-    from apps.users.models import WalletHistory
+    from user_log.models import WalletHistory
     wallet = get_or_create_wallet(user)
     return WalletHistory.objects.filter(wallet=wallet).order_by('-created_at')

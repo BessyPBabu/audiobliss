@@ -27,7 +27,7 @@ def calculate_order_totals(cart_total, discount_amount=Decimal('0')):
 
 
 def create_pending_order(user, address, cart_items, order_total, request_ip):
-    from apps.orders.models import Order, OrderProduct
+    from orders.models import Order, OrderProduct
 
     with transaction.atomic():
         # Validate stock before creating order
@@ -97,7 +97,7 @@ def confirm_cancellation(order):
 
 
 def request_return(order, user, reason):
-    from apps.orders.models import ReturnRequest
+    from orders.models import ReturnRequest
 
     if order.status != 'Delivered':
         raise OrderError("Only delivered orders can be returned.")

@@ -11,8 +11,8 @@ PRODUCTS_PER_PAGE = 6
 
 
 def get_annotated_products_queryset():
-    from apps.products.models import Product
-    from apps.offers.models import ProductOffer, CategoryOffer
+    from product_management.models import Product
+    from offer_management.models import ProductOffer, CategoryOffer
     now = timezone.now()
 
     return Product.objects.filter(deleted=False, is_active=True).annotate(

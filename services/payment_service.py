@@ -40,7 +40,7 @@ def verify_razorpay_signature(payment_id, order_id, signature):
 
 
 def process_wallet_payment(request, order, total_amount):
-    from apps.orders.models import Payment
+    from orders.models import Payment
     import services.wallet_service as wallet_service
 
     total_amount = Decimal(str(total_amount))
@@ -94,7 +94,7 @@ def process_razorpay_payment(request, order, total_amount):
 
 
 def process_cod_payment(order, total_amount, cart_items):
-    from apps.orders.models import Payment, OrderProduct
+    from orders.models import Payment, OrderProduct
     with transaction.atomic():
         payment = Payment.objects.create(
             user=order.user,
@@ -111,7 +111,7 @@ def process_cod_payment(order, total_amount, cart_items):
 
 
 def confirm_razorpay_payment(razorpay_payment_id, razorpay_order_id, razorpay_signature):
-    from apps.orders.models import Order, Payment, OrderProduct
+    from orders.models import Order, Payment, OrderProduct
     import services.wallet_service as wallet_service
 
     verify_razorpay_signature(razorpay_payment_id, razorpay_order_id, razorpay_signature)
@@ -140,7 +140,7 @@ def confirm_razorpay_payment(razorpay_payment_id, razorpay_order_id, razorpay_si
         _confirm_order(order, payment)
         _decrement_stock(order)
 
-        from apps.cart.models import Cart
+        from cart.models import Cart
         Cart.objects.filter(user=order.user).delete()
 
         logger.info("Razorpay payment confirmed for order %s", order.order_id)
@@ -148,7 +148,7 @@ def confirm_razorpay_payment(razorpay_payment_id, razorpay_order_id, razorpay_si
 
 
 def _confirm_order(order, payment):
-    from apps.orders.models import OrderProduct
+    from orders.models import OrderProduct
     order.is_ordered = True
     order.payment = payment
     order.payment_status = 'Completed'
@@ -158,7 +158,7 @@ def _confirm_order(order, payment):
 
 
 def _decrement_stock(order):
-    from apps.orders.models import OrderProduct
+    from orders.models import OrderProduct
     items = OrderProduct.objects.filter(order=order).select_related('product_variant')
     for item in items:
         variant = item.product_variant

@@ -27,7 +27,7 @@ def send_otp_email(email, otp_code):
 
 
 def create_and_send_otp(user):
-    from apps.users.models import OTP
+    from user_log.models import OTP
     # Deactivate existing OTPs
     OTP.objects.filter(user=user, is_active=True).update(is_active=False)
     otp = OTP.objects.create(user=user)
@@ -36,7 +36,7 @@ def create_and_send_otp(user):
 
 
 def verify_otp(user, otp_code):
-    from apps.users.models import OTP
+    from user_log.models import OTP
     otp = OTP.objects.filter(user=user, is_active=True).order_by('-created_at').first()
 
     if otp is None:
@@ -57,7 +57,7 @@ def verify_otp(user, otp_code):
 
 
 def can_resend_otp(user):
-    from apps.users.models import OTP
+    from user_log.models import OTP
     recent = OTP.objects.filter(user=user, is_active=True).order_by('-created_at').first()
     if recent and (timezone.now() - recent.created_at) < timedelta(minutes=OTP_VALIDITY_MINUTES):
         return False
@@ -77,7 +77,7 @@ def reset_user_password(user, new_password):
 
 
 def initiate_email_update(user, new_email):
-    from apps.users.models import Account
+    from user_log.models import Account
     if Account.objects.filter(email=new_email).exclude(pk=user.pk).exists():
         raise ValueError("This email address is already in use.")
     user.new_email = new_email
