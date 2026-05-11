@@ -76,7 +76,7 @@ def process_wallet_payment(request, order, total_amount):
         )
         return {
             'type': 'render',
-            'template': 'orders/razorpay_payment.html',
+            'template': 'user_log/razorpay_payment.html',
             'context': _razorpay_context(request, order, razorpay_order, amount_from_razorpay),
         }
 
@@ -88,7 +88,7 @@ def process_razorpay_payment(request, order, total_amount):
     logger.info("Razorpay payment initiated for order %s", order.order_id)
     return {
         'type': 'render',
-        'template': 'orders/razorpay_payment.html',
+        'template': 'user_log/razorpay_payment.html',
         'context': _razorpay_context(request, order, razorpay_order, total_amount),
     }
 

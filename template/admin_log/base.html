@@ -3,8 +3,7 @@
 <html lang="en">
 <head>
     <meta charset="utf-8">
-    <title>{% block title %}{% endblock %}
-    </title>
+    <title>{% block title %}{% endblock %}</title>
     <meta http-equiv="x-ua-compatible" content="ie=edge">
     <meta name="description" content="">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -12,95 +11,178 @@
     <meta property="og:type" content="">
     <meta property="og:url" content="">
     <meta property="og:image" content="">
-    <!-- Favicon -->
     <link rel="shortcut icon" type="image/x-icon" href="{% static 'admin/imgs/theme/favicon.ico' %}">
-    <!-- Template CSS -->
-    <link href="{% static 'admin/css/main.css' %}" rel="stylesheet" type="text/css" />
-    
-        <!-- Other head content -->
+    <link href="{% static 'admin/css/main.css' %}" rel="stylesheet" type="text/css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    
+    <style>
+        /* ── Submenu: click-toggle for touch devices ── */
+        .menu-aside .menu-item.has-submenu .submenu {
+            display: none;
+        }
+        .menu-aside .menu-item.has-submenu.open .submenu {
+            display: block;
+        }
+
+        /* ── Active menu item highlight ── */
+        .menu-aside .menu-item.active > .menu-link {
+            background-color: rgba(8, 129, 120, 0.15);
+            color: #088178;
+        }
+        .menu-aside .menu-item.active > .menu-link .icon {
+            color: #088178;
+        }
+
+        /* ── Submenu active link ── */
+        .menu-aside .submenu a.active {
+            color: #088178 !important;
+            font-weight: 600;
+        }
+
+        /* ── Submenu toggle arrow ── */
+        .menu-aside .menu-item.has-submenu > .menu-link .submenu-arrow {
+            float: right;
+            font-size: 10px;
+            margin-top: 4px;
+            transition: transform 0.2s ease;
+            color: #adb5bd;
+        }
+        .menu-aside .menu-item.has-submenu.open > .menu-link .submenu-arrow {
+            transform: rotate(180deg);
+        }
+
+        /* ── Mobile sidebar overlay ── */
+        .sidebar-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.45);
+            z-index: 9;
+        }
+        .sidebar-overlay.active {
+            display: block;
+        }
+
+        /* ── Responsive tweaks ── */
+        @media (max-width: 768px) {
+            .navbar-aside {
+                z-index: 10;
+            }
+            .main-wrap {
+                margin-left: 0 !important;
+            }
+        }
+    </style>
 </head>
+
 <body>
-    <div class="screen-overlay"></div>
+    <div class="screen-overlay" id="screen-overlay"></div>
+    <div class="sidebar-overlay" id="sidebar-overlay"></div>
+
     <aside class="navbar-aside" id="offcanvas_aside">
         <div class="aside-top">
             <a href="{% url 'adminlog:admin_dashboard' %}" class="brand-wrap">
-                <img src="{% static 'admin/imgs/theme/logo4.png' %}" class="logo" alt="Evara Dashboard">
+                <img src="{% static 'admin/imgs/theme/logo4.png' %}" class="logo" alt="Audio Bliss Dashboard">
             </a>
             <div>
-                <button class="btn btn-icon btn-aside-minimize"> <i class="text-muted material-icons md-menu_open"></i> </button>
+                <button class="btn btn-icon btn-aside-minimize" id="btn-aside-minimize">
+                    <i class="text-muted material-icons md-menu_open"></i>
+                </button>
             </div>
         </div>
+
         <nav>
             <ul class="menu-aside">
-                <li class="menu-item">
-                    <a class="menu-link" href="{% url 'adminlog:admin_dashboard' %}"> <i class="icon material-icons md-home"></i>
+
+                <li class="menu-item" id="nav-dashboard">
+                    <a class="menu-link" href="{% url 'adminlog:admin_dashboard' %}">
+                        <i class="icon material-icons md-home"></i>
                         <span class="text">Dashboard</span>
                     </a>
                 </li>
-                <li class="menu-item ">
-                    <a class="menu-link" href="{% url 'product_det:categories' %}"> <i class="icon material-icons md-category"></i>
+
+                <li class="menu-item" id="nav-categories">
+                    <a class="menu-link" href="{% url 'product_det:categories' %}">
+                        <i class="icon material-icons md-category"></i>
                         <span class="text">Categories</span>
                     </a>
                 </li>
-                <li class="menu-item has-submenu ">
-                    <a class="menu-link" href="{% url 'product_det:product_details' %}"> <i class="icon material-icons md-shopping_bag"></i>
+
+                <!-- Products with click-toggle submenu -->
+                <li class="menu-item has-submenu" id="nav-products">
+                    <a class="menu-link" href="{% url 'product_det:product_details' %}">
+                        <i class="icon material-icons md-shopping_bag"></i>
                         <span class="text">Products</span>
+                        <i class="submenu-arrow fas fa-chevron-down"></i>
                     </a>
-                    <div class="submenu ">
-                        <a href="{% url 'product_det:add_product' %}">Add products</a>
+                    <div class="submenu">
+                        <a href="{% url 'product_det:add_product' %}">Add Products</a>
                         <a href="{% url 'product_det:product_details' %}">Products Details</a>
-                        <a href="{% url 'product_det:add_variants' %}"> Add Variants</a>
-                        <a href="{% url 'product_det:variant_details' %}"> Variants Details</a>
+                        <a href="{% url 'product_det:add_variants' %}">Add Variants</a>
+                        <a href="{% url 'product_det:variant_details' %}">Variants Details</a>
                     </div>
                 </li>
-                <li class="menu-item">
-                    <a class="menu-link" href="{% url 'adminlog:users_list' %}"> <i class="icon material-icons md-person"></i>
+
+                <li class="menu-item" id="nav-customers">
+                    <a class="menu-link" href="{% url 'adminlog:users_list' %}">
+                        <i class="icon material-icons md-person"></i>
                         <span class="text">Customer Management</span>
                     </a>
                 </li>
-                <li class="menu-item">
-                    <a class="menu-link" href="{% url 'adminlog:order_list' %}"> <i class="icon material-icons md-shopping_cart"></i>
+
+                <li class="menu-item" id="nav-orders">
+                    <a class="menu-link" href="{% url 'adminlog:order_list' %}">
+                        <i class="icon material-icons md-shopping_cart"></i>
                         <span class="text">Order Management</span>
                     </a>
                 </li>
-                <li class="menu-item">
-                    <a class="menu-link"  href="{% url 'coupon:coupon_list' %}"><i class="icon material-icons md-local_offer"></i>
+
+                <li class="menu-item" id="nav-coupons">
+                    <a class="menu-link" href="{% url 'coupon:coupon_list' %}">
+                        <i class="icon material-icons md-local_offer"></i>
                         <span class="text">Coupon</span>
                     </a>
                 </li>
-                <li class="menu-item">
-                    <a class="menu-link"  href="{% url 'offer_management:offer_list' %}"> <i class="icon material-icons md-card_giftcard"></i>
+
+                <li class="menu-item" id="nav-offers">
+                    <a class="menu-link" href="{% url 'offer_management:offer_list' %}">
+                        <i class="icon material-icons md-card_giftcard"></i>
                         <span class="text">Offers</span>
                     </a>
                 </li>
-                <li class="menu-item">
-                    <a class="menu-link"  href="{% url 'adminlog:sales_report' %}"> <i class="icon material-icons md-insert_chart"></i>
+
+                <li class="menu-item" id="nav-sales">
+                    <a class="menu-link" href="{% url 'adminlog:sales_report' %}">
+                        <i class="icon material-icons md-insert_chart"></i>
                         <span class="text">Sales Report</span>
                     </a>
                 </li>
+
             </ul>
         </nav>
     </aside>
+
     <main class="main-wrap">
         <header class="main-header navbar">
             <div class="col-search">
                 <form class="searchform">
                     <div class="input-group">
                         <input list="search_terms" type="text" class="form-control" placeholder="Search term">
-                        <button class="btn btn-light bg" type="button"> <i class="material-icons md-search"></i></button>
+                        <button class="btn btn-light bg" type="button">
+                            <i class="material-icons md-search"></i>
+                        </button>
                     </div>
                     <datalist id="search_terms">
                         <option value="Products">
                         <option value="Categories">
-                        <option value="Color varients">
+                        <option value="Color variants">
                         <option value="Users">
                     </datalist>
                 </form>
             </div>
             <div class="col-nav">
-                <button class="btn btn-icon btn-mobile me-auto" data-trigger="#offcanvas_aside"> <i class="material-icons md-apps"></i> </button>
+                <button class="btn btn-icon btn-mobile me-auto" id="mobile-sidebar-toggle">
+                    <i class="material-icons md-apps"></i>
+                </button>
                 <ul class="nav">
                     <li class="nav-item">
                         <a class="nav-link btn-icon" href="#">
@@ -109,55 +191,148 @@
                         </a>
                     </li>
                     <li class="dropdown nav-item">
-                        <a href="{% url 'adminlog:admin_logout' %}" class ="btn ">Logout</a>
+                        <a href="{% url 'adminlog:admin_logout' %}" class="btn">Logout</a>
                     </li>
                 </ul>
             </div>
         </header>
-        {% block body %}
-        {% if messages %}
-        <script>
-            // Clear messages after they've been displayed
-            document.addEventListener('DOMContentLoaded', (event) => {
-                setTimeout(() => {
-                    document.querySelectorAll('.alert').forEach((el) => {
-                        el.style.display = 'none';
-                    });
-                }, 5000);  // Messages will disappear after 5 seconds
-            });
-        </script>
-    {% endif %}
 
-         
-        {% endblock %}
-    
+        {% block body %}{% endblock %}
 
         <footer class="main-footer font-xs">
             <div class="row pb-30 pt-15">
                 <div class="col-sm-6">
-                    <script>
-                        document.write(new Date().getFullYear())
-                    </script> ©, Evara - HTML Ecommerce Template.
+                    &copy; <script>document.write(new Date().getFullYear())</script> Audio Bliss Admin
                 </div>
                 <div class="col-sm-6">
-                    <div class="text-sm-end">
-                        All rights reserved.
-                    </div>
+                    <div class="text-sm-end">All rights reserved.</div>
                 </div>
             </div>
         </footer>
     </main>
+
+    <!-- Vendor JS -->
     <script src="{% static 'admin/js/vendors/jquery-3.6.0.min.js' %}"></script>
     <script src="{% static 'admin/js/vendors/bootstrap.bundle.min.js' %}"></script>
     <script src="{% static 'admin/js/vendors/select2.min.js' %}"></script>
     <script src="{% static 'admin/js/vendors/perfect-scrollbar.js' %}"></script>
     <script src="{% static 'admin/js/vendors/jquery.fullscreen.min.js' %}"></script>
-    <!-- Main Script -->
     <script src="{% static 'admin/js/main.js' %}" type="text/javascript"></script>
+    <link href="https://unpkg.com/cropperjs/dist/cropper.css" rel="stylesheet"/>
+    <script src="https://unpkg.com/cropperjs/dist/cropper.js"></script>
 
-    <!-- Include Cropper.js CSS and JS -->
-<link  href="https://unpkg.com/cropperjs/dist/cropper.css" rel="stylesheet"/>
-<script src="https://unpkg.com/cropperjs/dist/cropper.js"></script>
+    <script>
+    (function () {
 
+        /* ── Active nav item detection ── */
+        var path = window.location.pathname;
+        var navMap = {
+            'nav-dashboard': ['/admin/dashboard'],
+            'nav-categories': ['/categories'],
+            'nav-products': ['/products', '/variants', '/add-product', '/add-variants'],
+            'nav-customers': ['/users'],
+            'nav-orders': ['/orders'],
+            'nav-coupons': ['/coupon'],
+            'nav-offers': ['/offer'],
+            'nav-sales': ['/sales']
+        };
+
+        Object.keys(navMap).forEach(function (id) {
+            var el = document.getElementById(id);
+            if (!el) return;
+            var matched = navMap[id].some(function (seg) {
+                return path.indexOf(seg) !== -1;
+            });
+            if (matched) {
+                el.classList.add('active');
+            }
+        });
+
+        /* ── Mark active submenu links ── */
+        var submenuLinks = document.querySelectorAll('.submenu a');
+        submenuLinks.forEach(function (link) {
+            if (link.href && window.location.href.indexOf(link.getAttribute('href')) !== -1) {
+                link.classList.add('active');
+            }
+        });
+
+        /* ── Products submenu: open if current page is inside it ── */
+        var productsNav = document.getElementById('nav-products');
+        if (productsNav && productsNav.classList.contains('active')) {
+            productsNav.classList.add('open');
+        }
+
+        /* ── Click-toggle submenu (works on touch & desktop) ── */
+        var hasSubmenuItems = document.querySelectorAll('.menu-item.has-submenu > .menu-link');
+        hasSubmenuItems.forEach(function (link) {
+            link.addEventListener('click', function (e) {
+                // Allow normal navigation to the main link href on desktop
+                // but toggle submenu visibility
+                var parent = this.closest('.menu-item.has-submenu');
+                var isOpen = parent.classList.contains('open');
+
+                // Close all other open submenus
+                document.querySelectorAll('.menu-item.has-submenu.open').forEach(function (item) {
+                    if (item !== parent) item.classList.remove('open');
+                });
+
+                if (isOpen) {
+                    parent.classList.remove('open');
+                } else {
+                    parent.classList.add('open');
+                    // On mobile: prevent navigation so user can see submenu first
+                    var isMobile = window.innerWidth < 992;
+                    if (isMobile) e.preventDefault();
+                }
+            });
+        });
+
+        /* ── Mobile sidebar toggle ── */
+        var mobileToggle = document.getElementById('mobile-sidebar-toggle');
+        var aside = document.getElementById('offcanvas_aside');
+        var overlay = document.getElementById('sidebar-overlay');
+
+        function openSidebar() {
+            if (aside) aside.classList.add('show');
+            if (overlay) overlay.classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeSidebar() {
+            if (aside) aside.classList.remove('show');
+            if (overlay) overlay.classList.remove('active');
+            document.body.style.overflow = '';
+        }
+
+        if (mobileToggle) {
+            mobileToggle.addEventListener('click', function () {
+                var isOpen = aside && aside.classList.contains('show');
+                isOpen ? closeSidebar() : openSidebar();
+            });
+        }
+
+        if (overlay) {
+            overlay.addEventListener('click', closeSidebar);
+        }
+
+        /* ── Existing minimize button — keep working ── */
+        var minimizeBtn = document.getElementById('btn-aside-minimize');
+        if (minimizeBtn) {
+            minimizeBtn.addEventListener('click', function () {
+                document.body.classList.toggle('aside-mini');
+            });
+        }
+
+        /* ── Auto-hide flash messages after 5s ── */
+        setTimeout(function () {
+            document.querySelectorAll('.alert').forEach(function (el) {
+                el.style.transition = 'opacity 0.5s';
+                el.style.opacity = '0';
+                setTimeout(function () { el.style.display = 'none'; }, 500);
+            });
+        }, 5000);
+
+    })();
+    </script>
 </body>
 </html>
