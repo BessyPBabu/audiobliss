@@ -7,6 +7,7 @@ from django.http import JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.views.decorators.http import require_GET
 
+from admin_log.decorators import admin_required
 from .models import Product, ProductVariant, Color, Category, Brand
 from .forms import ProductForm, ProductVariantForm, ColorForm, CategoryForm, BrandForm
 
@@ -15,12 +16,14 @@ logger = logging.getLogger(__name__)
 
 # ─── Category ─────────────────────────────────────────────────────────────────
 
+@admin_required
 def category_list(request):
     categories = Category.objects.filter(is_deleted=False)
     form = CategoryForm()
     return render(request, 'admin_log/category_list.html', {'categories': categories, 'form': form})
 
 
+@admin_required
 def category_create(request):
     if request.method == 'POST':
         form = CategoryForm(request.POST)
@@ -38,6 +41,7 @@ def category_create(request):
     return render(request, 'admin_log/category_list.html', {'form': form, 'categories': categories})
 
 
+@admin_required
 def category_update(request, pk):
     category = get_object_or_404(Category, pk=pk)
     if request.method == 'POST':
@@ -57,6 +61,7 @@ def category_update(request, pk):
     return render(request, 'admin_log/category_form.html', {'form': form})
 
 
+@admin_required
 def category_delete(request, pk):
     category = get_object_or_404(Category, pk=pk)
     if request.method == 'POST':
@@ -73,6 +78,7 @@ def category_delete(request, pk):
 
 # ─── Product ──────────────────────────────────────────────────────────────────
 
+@admin_required
 def product_details(request):
     products = Product.objects.filter(deleted=False).select_related('category', 'brand')
     brands = Brand.objects.filter(is_deleted=False)
@@ -82,6 +88,7 @@ def product_details(request):
     })
 
 
+@admin_required
 def add_product(request):
     form = ProductForm()
     brand_form = BrandForm()
@@ -119,6 +126,7 @@ def add_product(request):
     return render(request, 'admin_log/add_product.html', {'form': form, 'brand_form': brand_form})
 
 
+@admin_required
 def product_update(request, pk):
     product = get_object_or_404(Product, pk=pk)
     if request.method == 'POST':
@@ -140,6 +148,7 @@ def product_update(request, pk):
     return render(request, 'admin_log/product_update.html', {'form': form, 'product': product})
 
 
+@admin_required
 def product_delete(request, pk):
     product = get_object_or_404(Product, pk=pk)
     if request.method == 'POST':
@@ -154,6 +163,7 @@ def product_delete(request, pk):
     return render(request, 'admin_log/product_delete.html', {'product': product})
 
 
+@admin_required
 def brand_update(request, id):
     brand = get_object_or_404(Brand, id=id)
     if request.method == 'POST':
@@ -175,11 +185,11 @@ def brand_update(request, id):
     return render(request, 'admin_log/edit_brand.html', {'brand': brand, 'form': form})
 
 
+@admin_required
 def brand_delete(request, id):
     brand = get_object_or_404(Brand, id=id)
     if request.method == 'POST':
         try:
-            # Soft delete to avoid CASCADE breaking products
             brand.soft_delete()
             messages.success(request, f'Brand "{brand.name}" deleted.')
         except Exception:
@@ -192,6 +202,7 @@ def brand_delete(request, id):
 
 # ─── Variants ─────────────────────────────────────────────────────────────────
 
+@admin_required
 def add_variants(request):
     variant_form = ProductVariantForm()
     color_form = ColorForm()
@@ -229,6 +240,7 @@ def add_variants(request):
     })
 
 
+@admin_required
 @require_GET
 def filter_products(request):
     brand_id = request.GET.get('brand_id')
@@ -243,6 +255,7 @@ def filter_products(request):
     return JsonResponse([], safe=False)
 
 
+@admin_required
 def variant_details(request):
     variants_qs = ProductVariant.objects.filter(
         deleted=False
@@ -258,6 +271,7 @@ def variant_details(request):
     return render(request, 'admin_log/variant_details.html', {'variants': variants})
 
 
+@admin_required
 def edit_variant(request, variant_id):
     variant = get_object_or_404(ProductVariant, id=variant_id)
 
@@ -283,6 +297,7 @@ def edit_variant(request, variant_id):
     return render(request, 'admin_log/edit_variant.html', {'variant_form': form, 'variant': variant})
 
 
+@admin_required
 def delete_variant(request, variant_id):
     variant = get_object_or_404(ProductVariant, id=variant_id)
     if request.method == 'POST':

@@ -4,19 +4,123 @@
 {% load static %}
 {% block body %}
 
+<style>
+    .order-detail-title {
+        font-size: 22px;
+        font-weight: 700;
+        margin-bottom: 25px;
+        color: #2b2b2b;
+    }
 
-{% load static %}
+    .detail-info-card {
+        border: none;
+        border-radius: 16px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.06);
+        overflow: hidden;
+        height: 100%;
+    }
 
-<div class="container mt-5">
-    <h5 class="mb-4">Order Details: {{ order.order_id }}</h5>
+    .detail-info-card .card-header {
+        background: linear-gradient(135deg, #088178, #04a196);
+        color: #fff;
+        border: none;
+        padding: 16px 22px;
+        font-weight: 600;
+    }
+
+    .detail-info-card .card-body p {
+        margin-bottom: 8px;
+        font-size: 14px;
+    }
+
+    .order-items-card {
+        border: none;
+        border-radius: 16px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.06);
+        overflow: hidden;
+    }
+
+    .order-items-card .card-header {
+        background: linear-gradient(135deg, #088178, #04a196);
+        color: #fff;
+        border: none;
+        padding: 16px 22px;
+        font-weight: 600;
+    }
+
+    table.order-items-table thead th {
+        background-color: #f8f9fa;
+        border: none;
+        color: #777;
+        text-transform: uppercase;
+        font-size: 12px;
+        font-weight: 700;
+        padding: 14px;
+    }
+
+    table.order-items-table td {
+        padding: 14px;
+        vertical-align: middle;
+        border-color: #f0f0f0;
+    }
+
+    table.order-items-table img {
+        border-radius: 8px;
+        object-fit: cover;
+    }
+
+    table.order-items-table tfoot td {
+        font-size: 16px;
+        font-weight: 700;
+        color: #088178;
+        border-top: 2px solid #088178;
+    }
+
+    .order-detail-actions .btn {
+        border-radius: 30px;
+        padding: 10px 26px;
+        font-weight: 600;
+        margin-left: 8px;
+    }
+
+    .btn-back {
+        background-color: transparent;
+        border: 2px solid #ddd;
+        color: #666;
+    }
+    .btn-back:hover {
+        border-color: #088178;
+        color: #088178;
+    }
+
+    .btn-cancel-order {
+        background-color: #c62828;
+        border: none;
+        color: #fff;
+    }
+    .btn-cancel-order:hover {
+        background-color: #a31f1f;
+        color: #fff;
+    }
+
+    .btn-return-order {
+        background-color: #ef6c00;
+        border: none;
+        color: #fff;
+    }
+    .btn-return-order:hover {
+        background-color: #d15e00;
+        color: #fff;
+    }
+</style>
+
+<div class="container mt-5 mb-5">
+    <!-- <h5 class="order-detail-title">Order Details: {{ order.order_id }}</h5> -->
 
     <div class="row">
-        <!-- Order Information Card -->
         <div class="col-md-6 mb-4">
-            <div class="card">
-                <div class="card-header bg-primary text-white">
-                    <h5>Order Information</h5>
-                </div>
+            <div class="detail-info-card">
+                <div class="card-header">Order Information</div>
                 <div class="card-body">
                     <p><strong>Order ID:</strong> {{ order.order_id }}</p>
                     <p><strong>Order Total:</strong> ₹{{ order.order_total }}</p>
@@ -26,14 +130,10 @@
             </div>
         </div>
 
-        <!-- Shipping Address Card -->
         <div class="col-md-6 mb-4">
-            <div class="card">
-                <div class="card-header bg-primary text-white">
-                    <h5>Shipping Address</h5>
-                </div>
+            <div class="detail-info-card">
+                <div class="card-header">Shipping Address</div>
                 <div class="card-body">
-                    <!-- <p><strong>Name:</strong> {{ order.address.user }}</p> -->
                     <p><strong>House Name:</strong> {{ order.address.house_name }}</p>
                     <p><strong>Street:</strong> {{ order.address.streat_name }}</p>
                     <p><strong>City:</strong> {{ order.address.place }}</p>
@@ -45,70 +145,67 @@
         </div>
     </div>
 
-    <!-- Order Items Card -->
-    <div class="card mb-4">
-        <div class="card-header bg-primary text-white">
-            <h5>Order Items</h5>
-        </div>
-        <div class="card-body">
-            <table class="table table-bordered">
-                <thead>
-                    <tr>
-                        <th>Image</th>
-                        <th>Title</th>
-                        <th>Color</th>
-                        <th>Quantity</th>
-                        <th>Price Each</th>
-                        <th>Total Price</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for item in order_items %}
+    <div class="order-items-card mb-4">
+        <div class="card-header">Order Items</div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table order-items-table mb-0">
+                    <thead>
                         <tr>
-                            <td>
-                                <img src="{{ item.product_variant.image1.url }}" alt="{{ item.product_variant.product.title }}" style="width: 50px; height: 50px;">
-                            </td>
-                            <td>
-                                <strong>{{ item.product_variant.product.title }}</strong>
-                            </td>
-                            <td>
-                                {{ item.product_variant.color.name }}
-                            </td>
-                            <td>
-                                {{ item.quantity }}
-                            </td>
-                            <td>
-                                ₹{{ item.product_price }}
-                            </td>
-                            <td>
-                                ₹{{ item.total_price|floatformat:2 }}
-                            </td>
+                            <th>Image</th>
+                            <th>Title</th>
+                            <th>Color</th>
+                            <th>Quantity</th>
+                            <th>Price Each</th>
+                            <th>Total Price</th>
                         </tr>
-                    {% endfor %}
-                </tbody>
-                <tfoot>
-                    <tr>
-                        <td colspan="5" class="text-right"><strong>Total Amount:</strong></td>
-                        <td>₹{{ order.order_total }}</td>
-                    </tr>
-                </tfoot>
-            </table>
+                    </thead>
+                    <tbody>
+                        {% for item in order_items %}
+                            <tr>
+                                <td>
+                                    <img src="{{ item.product_variant.image1.url }}" alt="{{ item.product_variant.product.title }}" style="width: 55px; height: 55px;">
+                                </td>
+                                <td>
+                                    <strong>{{ item.product_variant.product.title }}</strong>
+                                </td>
+                                <td>
+                                    {{ item.product_variant.color.name }}
+                                </td>
+                                <td>
+                                    {{ item.quantity }}
+                                </td>
+                                <td>
+                                    ₹{{ item.product_price }}
+                                </td>
+                                <td>
+                                    ₹{{ item.total_price|floatformat:2 }}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                    <tfoot>
+                        <tr>
+                            <td colspan="5" class="text-right">Total Amount:</td>
+                            <td>₹{{ order.order_total }}</td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
         </div>
     </div>
-    
 
-    <!-- Action Buttons -->
-    <div class="text-right">
-        <a href="{% url 'userlog:user_orders' %}" class="btn btn-secondary">Back to Orders</a>
+    <div class="order-detail-actions text-right">
+        <a href="{% url 'userlog:user_orders' %}" class="btn btn-back">Back to Orders</a>
         {% if order.status == 'New' %}
             <form action="{% url 'userlog:cancel_order' order.id %}" method="post" style="display:inline;">
                 {% csrf_token %}
-                <button type="submit" class="btn btn-danger">Cancel Order</button>
+                <button type="submit" class="btn btn-cancel-order">Cancel Order</button>
             </form>
         {% elif order.status == 'Delivered' %}
             <form action="{% url 'userlog:return_order' order.id %}" method="post" style="display:inline;">
                 {% csrf_token %}
-                <button type="submit" class="btn btn-warning">Return Order</button>
+                <button type="submit" class="btn btn-return-order">Return Order</button>
             </form>
         {% endif %}
     </div>

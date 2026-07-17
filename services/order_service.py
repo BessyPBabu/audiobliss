@@ -26,24 +26,36 @@ def calculate_order_totals(cart_total, discount_amount=Decimal('0')):
     }
 
 
-def create_pending_order(user, address, cart_items, order_total, request_ip):
+def create_pending_order(user, address, cart_items, order_total, request_ip, discount_amount=Decimal('0')):
     from orders.models import Order, OrderProduct
+    from product_management.models import ProductVariant
 
     with transaction.atomic():
-        # Validate stock before creating order
+        # Lock the variant rows so a concurrent checkout on the same
+        # variant can't both pass this check for the last unit in stock.
+        variant_ids = [item.product_variant_id for item in cart_items]
+        locked_variants = {
+            v.id: v for v in ProductVariant.objects.select_for_update()
+            .select_related('product').filter(id__in=variant_ids)
+        }
+
         for item in cart_items:
-            if item.quantity > item.product_variant.stock:
+            variant = locked_variants.get(item.product_variant_id)
+            if variant is None:
+                raise OrderError("One of the items in your cart is no longer available.")
+            if item.quantity > variant.stock:
                 raise OrderError(
-                    f"'{item.product_variant.product.title}' has only "
-                    f"{item.product_variant.stock} units in stock."
+                    f"'{variant.product.title}' has only {variant.stock} units in stock."
                 )
 
+       
         order = Order.objects.create(
             user=user,
             address=address,
             order_id=str(uuid.uuid4()),
             order_total=Decimal(str(order_total)),
             tax=Decimal('0'),
+            coupon_discount=Decimal(str(discount_amount)),
             ip=request_ip,
             is_ordered=False,
             status='New',

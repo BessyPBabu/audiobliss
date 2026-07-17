@@ -5,17 +5,20 @@ from django.db import transaction
 from django.shortcuts import render, redirect, get_object_or_404
 
 import services.coupon_service as coupon_service
+from admin_log.decorators import admin_required
 from .forms import CouponForm, UserCouponForm
 from .models import Coupon
 
 logger = logging.getLogger(__name__)
 
 
+@admin_required
 def coupon_list(request):
     coupons = Coupon.objects.all().order_by('-id')
     return render(request, 'admin_log/list_coupon.html', {'coupons': coupons})
 
 
+@admin_required
 def add_coupon(request):
     if request.method == 'POST':
         form = CouponForm(request.POST)
@@ -35,6 +38,7 @@ def add_coupon(request):
     return render(request, 'admin_log/add_coupon.html', {'form': form})
 
 
+@admin_required
 def edit_coupon(request, pk):
     coupon = get_object_or_404(Coupon, pk=pk)
     if request.method == 'POST':
@@ -55,6 +59,7 @@ def edit_coupon(request, pk):
     return render(request, 'admin_log/edit_coupon.html', {'form': form, 'coupon': coupon})
 
 
+@admin_required
 def delete_coupon(request, pk):
     coupon = get_object_or_404(Coupon, pk=pk)
     if request.method == 'POST':
@@ -68,6 +73,8 @@ def delete_coupon(request, pk):
 
     return render(request, 'admin_log/delete_coupon.html', {'coupon': coupon})
 
+
+# ─── Customer-facing: unchanged, stays login_required only ───────────────────
 
 @login_required
 @transaction.atomic

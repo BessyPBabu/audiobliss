@@ -20,13 +20,16 @@ def get_balance(user):
 
 
 def credit(user, amount, transaction_type=TRANSACTION_REFUND):
-    from user_log.models import WalletHistory
+    from user_log.models import Wallet, WalletHistory
     amount = Decimal(str(amount))
     if amount <= 0:
         raise ValueError(f"Credit amount must be positive, got {amount}")
 
+    # Ensure the row exists before we try to lock it.
+    get_or_create_wallet(user)
+
     with transaction.atomic():
-        wallet = get_or_create_wallet(user)
+        wallet = Wallet.objects.select_for_update().get(user=user)
         wallet.balance += amount
         wallet.save(update_fields=['balance'])
         WalletHistory.objects.create(wallet=wallet, type=transaction_type, amount=amount)
@@ -35,15 +38,19 @@ def credit(user, amount, transaction_type=TRANSACTION_REFUND):
 
 
 def debit(user, amount, transaction_type=TRANSACTION_PAYMENT):
-    from user_log.models import WalletHistory
+    from user_log.models import Wallet, WalletHistory
     amount = Decimal(str(amount))
     if amount <= 0:
         raise ValueError(f"Debit amount must be positive, got {amount}")
 
+    get_or_create_wallet(user)
+
     with transaction.atomic():
-        wallet = get_or_create_wallet(user)
+        wallet = Wallet.objects.select_for_update().get(user=user)
         if wallet.balance < amount:
-            raise ValueError(f"Insufficient wallet balance. Available: {wallet.balance}, Required: {amount}")
+            raise ValueError(
+                f"Insufficient wallet balance. Available: {wallet.balance}, Required: {amount}"
+            )
         wallet.balance -= amount
         wallet.save(update_fields=['balance'])
         WalletHistory.objects.create(wallet=wallet, type=transaction_type, amount=amount)
@@ -52,8 +59,7 @@ def debit(user, amount, transaction_type=TRANSACTION_PAYMENT):
 
 
 def can_pay_with_wallet(user, amount):
-    balance = get_balance(user)
-    return balance >= Decimal(str(amount))
+    return get_balance(user) >= Decimal(str(amount))
 
 
 def get_transaction_history(user):

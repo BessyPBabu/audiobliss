@@ -6,37 +6,57 @@
 {% load static %}
 {% block extra_styles %}
 <style>
-.detail-gallery {
+.pd-gallery {
     position: relative;
 }
 
-.product-image-slider {
-    display: flex;
-    overflow: hidden;
-}
-
-.product-image-slider img {
+.pd-main-frame {
     width: 100%;
-    height: 600px;
-    object-fit: contain;
+    height: 550px;
+    overflow: hidden;
+    border-radius: 10px;
+    background: #f7f7f7;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
-.slider-nav-thumbnails {
+.pd-main-frame img {
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: contain;
+    transition: transform 0.35s ease;
+}
+
+.pd-main-frame:hover img {
+    transform: scale(1.15);
+}
+
+.pd-thumb-strip {
     display: flex;
     gap: 10px;
     margin-top: 10px;
+    flex-wrap: wrap;
 }
 
-.slider-nav-thumbnails img {
-    width: 100px;
-    height: 75px;
-    object-fit: cover;
-    cursor: pointer;
+.pd-thumb-item {
+    width: 90px;
+    height: 90px;
     border: 2px solid transparent;
+    border-radius: 6px;
+    overflow: hidden;
+    cursor: pointer;
+    flex-shrink: 0;
 }
 
-.slider-nav-thumbnails img.active {
-    border-color: #333; /* Highlight border for active thumbnail */
+.pd-thumb-item img {
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: cover;
+}
+
+.pd-thumb-item.active {
+    border-color: #088178;
 }
 
 .wishlist-active {
@@ -62,41 +82,24 @@
                 <div class="product-detail accordion-detail">
                     <div class="row mb-50">
                         <div class="col-md-6 col-sm-12 col-xs-12">
-                            <div class="detail-gallery">
-                                <span class="zoom-icon"><i class="fi-rs-search"></i></span>
-                                <!-- MAIN SLIDES -->
-                                <div class="product-image-slider">
-                                    {% for variant in product.variants.all %}
-                                        {% if variant.image1 %}
-                                            <figure class="border-radius-10">
-                                                <img src="{{ variant.image1.url }}" alt="{{ product.title }} - {{ variant.color.name }} image1">
-                                            </figure>
-                                        {% endif %}
-                                        {% if variant.image2 %}
-                                            <figure class="border-radius-10">
-                                                <img src="{{ variant.image2.url }}" alt="{{ product.title }} - {{ variant.color.name }} image2">
-                                            </figure>
-                                        {% endif %}
-                                        {% if variant.image3 %}
-                                            <figure class="border-radius-10">
-                                                <img src="{{ variant.image3.url }}" alt="{{ product.title }} - {{ variant.color.name }} image3">
-                                            </figure>
-                                        {% endif %}
-                                    {% endfor %}
+                            <div class="pd-gallery">
+
+                                <div class="pd-main-frame">
+                                    <img id="main-product-image"
+                                         src="{% if selected_variant.image1 %}{{ selected_variant.image1.url }}{% endif %}"
+                                         alt="{{ product.title }}">
                                 </div>
-                                <!-- THUMBNAILS -->
-                                <div class="slider-nav-thumbnails pl-15 pr-15">
-                                    {% for variant in product.variants.all %}
-                                        {% if variant.image1 %}
-                                            <div><img src="{{ variant.image1.url }}" alt="{{ product.title }} - {{ variant.color.name }} image1"></div>
-                                        {% endif %}
-                                        {% if variant.image2 %}
-                                            <div><img src="{{ variant.image2.url }}" alt="{{ product.title }} - {{ variant.color.name }} image2"></div>
-                                        {% endif %}
-                                        {% if variant.image3 %}
-                                            <div><img src="{{ variant.image3.url }}" alt="{{ product.title }} - {{ variant.color.name }} image3"></div>
-                                        {% endif %}
-                                    {% endfor %}
+
+                                <div class="pd-thumb-strip" id="thumbnail-strip">
+                                    {% if selected_variant.image1 %}
+                                        <div class="pd-thumb-item active"><img src="{{ selected_variant.image1.url }}" alt="{{ product.title }} thumbnail 1"></div>
+                                    {% endif %}
+                                    {% if selected_variant.image2 %}
+                                        <div class="pd-thumb-item"><img src="{{ selected_variant.image2.url }}" alt="{{ product.title }} thumbnail 2"></div>
+                                    {% endif %}
+                                    {% if selected_variant.image3 %}
+                                        <div class="pd-thumb-item"><img src="{{ selected_variant.image3.url }}" alt="{{ product.title }} thumbnail 3"></div>
+                                    {% endif %}
                                 </div>
                             </div>
                             <!-- End Gallery -->
@@ -164,7 +167,7 @@
                                             data-stock="{{ variant.stock }}"
                                             data-images="{% if variant.image1 %}{{ variant.image1.url }}{% endif %},{% if variant.image2 %}{{ variant.image2.url }}{% endif %},{% if variant.image3 %}{{ variant.image3.url }}{% endif %}">
                                                 <a href="#" data-color="{{ variant.color.name }}">
-                                                    <span class="product-color" style="background-color: {{ variant.color.hex_code }};"></span>
+                                                    <span class="product-color" style="background-color: {{ variant.color.hex_code }}"></span>
                                                 </a>
                                             </li>
                                         {% endfor %}
@@ -176,12 +179,12 @@
                                     <p id="maxQuantity">Max per person: <span id="max-quantity-display">{{ selected_variant.max_quantity_per_user }}</span></p>
                                     <div class="product-extra-link2">
                                         <button type="submit" class="add-to-cart button-add-to-cart">Add to cart</button>
-                                        <a aria-label="Add To Wishlist" class="action-btn hover-up add-to-wishlist {% if item.product_variant.id in wishlist_variant_ids %}wishlist-active {% endif %}" data-product-variant-id="{{ item.product_variant.id }}" href="#"><i class="fi-rs-heart"></i></a>
+                                        <a aria-label="Add To Wishlist" class="action-btn hover-up add-to-wishlist {% if selected_variant.id in wishlist_variant_ids %}wishlist-active{% endif %}" data-product-variant-id="{{ selected_variant.id }}" href="#"><i class="fi-rs-heart"></i></a>
 
                                     </div>
                                 </div>
                                 <ul class="product-meta font-xs color-grey mt-50">
-                                    <li>Availability:<span class="in-stock text-success ml-5">{{ selected_variant.stock }} Items In Stock</span></li>
+                                    <li>Availability:<span class="in-stock text-success ml-5" id="variant-stock-display">{{ selected_variant.stock }} Items In Stock</span></li>
                                 </ul>
                             </div>
                             <!-- Detail Info -->
@@ -278,63 +281,83 @@
 {% block extra_js %}
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 
-<!-- Add Toastify CSS -->
-<link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
-
-<!-- Add Toastify JS -->
-<script type="text/javascript" src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
-
-<!-- Add Swiper CSS -->
-<link rel="stylesheet" href="https://unpkg.com/swiper/swiper-bundle.min.css" />
-
-<!-- Add Swiper JS -->
-<script src="https://unpkg.com/swiper/swiper-bundle.min.js"></script>
-
-<!-- Your Custom Script -->
 <script>
     $(document).ready(function() {
-        // Color variant selection handler
-        $('.color-filter li').click(function() {
-            // Remove active class from all color options
-            $('.color-filter li').removeClass('active');
 
-            // Add active class to the clicked color option
+        function setGalleryFromUrls(urlsCsv) {
+            var urls = (urlsCsv || '').split(',')
+                .map(function (u) { return u.trim(); })
+                .filter(function (u) { return u.length > 0; });
+
+            var $mainImage = $('#main-product-image');
+            var $thumbStrip = $('#thumbnail-strip');
+
+            $thumbStrip.empty();
+
+            if (urls.length === 0) {
+                $mainImage.attr('src', '');
+                return;
+            }
+
+            $mainImage.attr('src', urls[0]);
+
+            urls.forEach(function (url, index) {
+                var $thumb = $('<div class="pd-thumb-item"><img src="' + url + '" alt="Product thumbnail"></div>');
+                if (index === 0) $thumb.addClass('active');
+                $thumbStrip.append($thumb);
+            });
+        }
+
+        // ── Thumbnail click: swap main image ──
+        $(document).on('click', '.pd-thumb-item', function () {
+            var url = $(this).find('img').attr('src');
+            $('#main-product-image').attr('src', url);
+            $('.pd-thumb-item').removeClass('active');
             $(this).addClass('active');
-
-            // Get the image URLs from the selected color variant
-            var imageUrls = $(this).data('images').split(',');
-
-            // Update the main product image
-            var $imageSlider = $('.product-image-slider');
-            $imageSlider.empty(); // Clear current images
-
-            // Add new images
-            imageUrls.forEach(function(url) {
-                if (url) {
-                    $imageSlider.append('<figure class="border-radius-10"><img src="' + url + '" alt="Product Image"></figure>');
-                }
-            });
-
-            // Update thumbnails as well
-            var $thumbnailSlider = $('.slider-nav-thumbnails');
-            $thumbnailSlider.empty(); // Clear current thumbnails
-
-            // Add new thumbnails
-            imageUrls.forEach(function(url) {
-                if (url) {
-                    $thumbnailSlider.append('<div><img src="' + url + '" alt="Product Thumbnail"></div>');
-                }
-            });
         });
 
-        // Add to Cart handler
+        // ── Color variant selection handler ──
+        $('.color-filter li').click(function () {
+            $('.color-filter li').removeClass('active');
+            $(this).addClass('active');
+
+            var $selected = $(this);
+            setGalleryFromUrls($selected.data('images'));
+
+            var offerPrice = parseFloat($selected.data('offer-price'));
+            var originalPrice = parseFloat($selected.data('price'));
+            var maxQuantity = $selected.data('max-quantity');
+            var stock = $selected.data('stock');
+
+            if (!isNaN(offerPrice)) {
+                $('#variant-price').text('₹' + offerPrice.toFixed(2));
+            }
+            if (!isNaN(originalPrice) && !isNaN(offerPrice)) {
+                if (offerPrice < originalPrice) {
+                    $('#variant-old-price').text('₹' + originalPrice.toFixed(2));
+                    $('#variant-old-price').closest('ins').show();
+                    var pct = Math.round(((originalPrice - offerPrice) / originalPrice) * 100);
+                    $('#variant-discount').text('Save ' + pct + '%').show();
+                } else {
+                    $('#variant-old-price').closest('ins').hide();
+                    $('#variant-discount').hide();
+                }
+            }
+            if (maxQuantity !== undefined) {
+                $('#max-quantity-display').text(maxQuantity);
+            }
+            if (stock !== undefined) {
+                $('#variant-stock-display').text(stock + ' Items In Stock');
+            }
+        });
+
+        // ── Add to Cart handler ──
         $('.add-to-cart').click(function(e) {
             e.preventDefault();
 
             var selectedColor = $('.color-filter li.active');
             var productVariantId = selectedColor.data('variant-id');
 
-            // Check if a color variant is selected
             if (!productVariantId) {
                 showToast('Please select a color variant first.', 'error');
                 return;
@@ -352,7 +375,6 @@
                 success: function(response) {
                     if (response.success) {
                         showToast('Product added to cart successfully!', 'success');
-                        // Update cart total and item count in the UI
                         $('#cart-total').text(response.cart_total);
                         $('#cart-item-count').text(response.item_count);
                     } else {
@@ -361,18 +383,18 @@
                 },
                 error: function(xhr, errmsg, err) {
                     var errorMessage = xhr.responseJSON ? xhr.responseJSON.error : 'Maximum products per user limit exceeded!';
-                    showToast('Error: ' + errorMessage, 'error');
+                    showToast(errorMessage, 'error');
                 }
             });
         });
 
+        // ── Wishlist toggle handler ──
         $('.add-to-wishlist').click(function(e) {
             e.preventDefault();
 
             var selectedColor = $('.color-filter li.active');
             var productVariantId = selectedColor.data('variant-id');
 
-            // Check if a color variant is selected
             if (!productVariantId) {
                 showToast('Please select a color variant first.', 'error');
                 return;
@@ -389,12 +411,9 @@
                 success: function(response) {
                     showToast(response.message, response.success ? 'success' : 'error');
 
-                    // Toggle the wishlist button status (e.g., change heart icon color)
                     if (response.message.includes('added')) {
-                        // Change to active state, e.g., highlight the heart icon
                         $('.add-to-wishlist').addClass('wishlist-active');
                     } else {
-                        // Revert to inactive state
                         $('.add-to-wishlist').removeClass('wishlist-active');
                     }
                 },
@@ -404,39 +423,12 @@
             });
         });
 
-
-        function showToast(message, type) {
-            var backgroundColor = type === 'success' ? '#4CAF50' : '#F44336';
-            
-            Toastify({
-                text: message,
-                duration: 3000,
-                close: true,
-                gravity: "top",
-                position: "right",
-                backgroundColor: backgroundColor,
-                stopOnFocus: true
-            }).showToast();
+        var $initialActive = $('.color-filter li.active').first();
+        if ($initialActive.length) {
+            setGalleryFromUrls($initialActive.data('images'));
         }
-    });
 
-    // Initialize Swiper for product images
-    var swiper = new Swiper('.product-image-slider', {
-        spaceBetween: 10,
-        slidesPerView: 1,
-        navigation: {
-            nextEl: '.swiper-button-next',
-            prevEl: '.swiper-button-prev',
-        },
-        thumbs: {
-            swiper: {
-                el: '.slider-nav-thumbnails',
-                slidesPerView: 4,
-            }
-        }
     });
 </script>
-
-
 {% endblock %}
 {% endblock %}

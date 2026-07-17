@@ -94,18 +94,33 @@ class AddressForm(forms.ModelForm):
         return pincode
 
 
+# new
 class AccountUpdateForm(forms.ModelForm):
+    ALLOWED_IMAGE_TYPES = {'image/jpeg', 'image/png', 'image/webp'}
+
     class Meta:
         model = Account
         fields = ['username', 'phone', 'profile_image']
 
-    def clean_username(self):
-        username = self.cleaned_data.get('username', '').strip()
-        if not re.match(r'^[a-zA-Z0-9_]+$', username):
-            raise forms.ValidationError(
-                "Username can only contain letters, numbers, and underscores."
-            )
-        return username
+    def clean_profile_image(self):
+        image = self.cleaned_data.get('profile_image')
+        if not image or not hasattr(image, 'content_type'):
+            return image 
+
+        if image.size > 5 * 1024 * 1024:
+            raise forms.ValidationError("Image file too large (max 5MB).")
+        if image.content_type not in self.ALLOWED_IMAGE_TYPES:
+            raise forms.ValidationError("Only JPEG, PNG or WEBP images are allowed.")
+
+        try:
+            from PIL import Image
+            image.seek(0)
+            Image.open(image).verify()
+            image.seek(0)
+        except Exception:
+            raise forms.ValidationError("Uploaded file is not a valid image.")
+
+        return image
 
     def clean_phone(self):
         phone = self.cleaned_data.get('phone', '').strip()

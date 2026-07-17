@@ -4,64 +4,133 @@
 {% load static %}
 {% block body %}
 
+<style>
+    .orders-page-title {
+        font-size: 24px;
+        font-weight: 700;
+        margin-bottom: 20px;
+        color: #2b2b2b;
+    }
 
-{% load static %}
+    .orders-table-card {
+        border: none;
+        border-radius: 16px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.06);
+        overflow: hidden;
+    }
 
-<div class="container mt-5">
-    <h2>My Orders</h2>
-    <div class="table-responsive">
-        <table class="table table-striped">
-            <thead>
-                <tr>
-                    <th>Order ID</th>
-                    <th>Date</th>
-                    <th>Total</th>
-                    <th>Status</th>
-                    <th>Payment Method</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for order in orders %}
-                {% if order.order_id %}
+    table.orders-table thead th {
+        background-color: #f8f9fa;
+        border: none;
+        color: #777;
+        text-transform: uppercase;
+        font-size: 12px;
+        font-weight: 700;
+        padding: 16px;
+    }
+
+    table.orders-table td {
+        padding: 16px;
+        vertical-align: middle;
+        border-color: #f0f0f0;
+    }
+
+    .status-pill {
+        display: inline-block;
+        padding: 5px 14px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 600;
+    }
+
+    .status-new, .status-confirmed { background-color: #e3f2fd; color: #1565c0; }
+    .status-shipped { background-color: #fff3e0; color: #ef6c00; }
+    .status-delivered { background-color: #e8f5e9; color: #2e7d32; }
+    .status-cancelled, .status-pending-cancellation { background-color: #fdecea; color: #c62828; }
+    .status-return-requested, .status-returned { background-color: #f3e5f5; color: #6a1b9a; }
+    .status-payment-pending { background-color: #fff8e1; color: #f9a825; }
+
+    .order-action-btn {
+        border-radius: 20px;
+        padding: 6px 16px;
+        font-size: 12px;
+        font-weight: 600;
+        border: none;
+        margin: 2px;
+        transition: transform 0.15s ease;
+    }
+    .order-action-btn:hover {
+        transform: translateY(-1px);
+    }
+
+    .btn-view { background-color: #e3f2fd; color: #1565c0; }
+    .btn-cancel { background-color: #fdecea; color: #c62828; }
+    .btn-pay { background-color: #088178; color: #fff; }
+    .btn-return { background-color: #fff3e0; color: #ef6c00; }
+    .btn-invoice { background-color: #f0f0f0; color: #444; }
+</style>
+
+<div class="container mt-5 mb-5">
+    <h2 class="orders-page-title">My Orders</h2>
+    <div class="orders-table-card">
+        <div class="table-responsive">
+            <table class="table orders-table mb-0">
+                <thead>
                     <tr>
-                        <td>{{ order.order_id }}</td>
-                        <td>{{ order.created_at|date:"d M Y" }}</td>
-                        <td>{{ order.order_total }}</td>
-                        <td>{{ order.get_status_display }}</td>
-                        <td>
-                            {% if order.payment %}
-                                {{ order.payment.payment_method }}
-                            {% else %}
-                                Not Available
-                            {% endif %}
-                        </td>
-                        <td>
-                            <a href="{% url 'userlog:order_details' order.id %}" class="btn btn-info btn-sm">View</a>
-                            {% if order.status in 'New Confirmed' %}
-                                <form action="{% url 'userlog:cancel_order' order.id %}" method="post" style="display:inline;">
-                                    {% csrf_token %}
-                                    <button type="submit" class="btn btn-danger btn-sm">Cancel</button>
-                                </form>
-                            {% elif order.status == 'Cancelled' and not order.is_ordered %}
-                                <a href="{% url 'cart:checkout' %}" class="btn btn-primary btn-sm">Pay Again</a>
-                            {% elif order.status == 'New' and not order.is_ordered %}
-                                <a href="{% url 'cart:checkout' %}" class="btn btn-primary btn-sm">Pay Again</a>
-                            {% elif order.status == 'Delivered' %}
-                                <form action="{% url 'userlog:return_order' order.id %}" method="post" style="display:inline;">
-                                    {% csrf_token %}
-                                    <button type="submit" class="btn btn-warning btn-sm">Return</button>
-                                </form>
-                            {% elif order.status == 'Payment Pending' %}
-                                <a href="{% url 'cart:repay_order' order.id %}" class="btn btn-primary btn-sm">Pay Again</a>
-                            {% endif %}
-                            <a href="{% url 'orders:invoice' order_id=order.id %}" class="btn btn-primary btn-sm"> Invoice</a>
-                        </td>
+                        <th>Order ID</th>
+                        <th>Date</th>
+                        <th>Total</th>
+                        <th>Status</th>
+                        <th>Payment Method</th>
+                        <th>Actions</th>
                     </tr>
-                    {% endif %}
-                {% endfor %}
-            </tbody>
-        </table>
+                </thead>
+                <tbody>
+                    {% for order in orders %}
+                    {% if order.order_id %}
+                        <tr>
+                            <td>{{ order.order_id }}</td>
+                            <td>{{ order.created_at|date:"d M Y" }}</td>
+                            <td>₹{{ order.order_total }}</td>
+                            <td>
+                                <span class="status-pill status-{{ order.status|slugify }}">{{ order.get_status_display }}</span>
+                            </td>
+                            <td>
+                                {% if order.payment %}
+                                    {{ order.payment.payment_method }}
+                                {% else %}
+                                    Not Available
+                                {% endif %}
+                            </td>
+                            <td>
+                                <a href="{% url 'userlog:order_details' order.id %}" class="order-action-btn btn-view">View</a>
+
+                                {% if order.can_be_cancelled %}
+                                    <form action="{% url 'userlog:cancel_order' order.id %}" method="post" style="display:inline;">
+                                        {% csrf_token %}
+                                        <button type="submit" class="order-action-btn btn-cancel">Cancel</button>
+                                    </form>
+                                {% elif order.status == 'payment pending' %}
+                                    <a href="{% url 'cart:repay_order' order.id %}" class="order-action-btn btn-pay">Pay Again</a>
+                                {% elif order.can_be_returned %}
+                                    <form action="{% url 'userlog:return_order' order.id %}" method="post" style="display:inline;">
+                                        {% csrf_token %}
+                                        <button type="submit" class="order-action-btn btn-return">Return</button>
+                                    </form>
+                                {% endif %}
+
+                                <a href="{% url 'orders:invoice' order_id=order.id %}" class="order-action-btn btn-invoice">Invoice</a>
+                            </td>
+                        </tr>
+                        {% endif %}
+                    {% empty %}
+                        <tr>
+                            <td colspan="6" class="text-center text-muted py-4">You haven't placed any orders yet.</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
     </div>
 </div>
 

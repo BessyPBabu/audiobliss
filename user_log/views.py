@@ -1,6 +1,7 @@
 import logging
 from django.contrib import messages
 from django.contrib.auth import login, logout, authenticate
+from django.core.exceptions import ValidationError as DjangoValidationError
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import render, redirect, get_object_or_404
 from django.views.decorators.cache import cache_control, never_cache
@@ -8,6 +9,8 @@ from django.views.decorators.cache import cache_control, never_cache
 import services.user_service as user_service
 import services.product_service as product_service
 import services.wallet_service as wallet_service
+import services.security_service as security_service
+
 from .forms import (
     RegistrationForm, AccountAuthenticationForm, OTPForm,
     AddressForm, AccountUpdateForm, EmailUpdateForm,
@@ -85,6 +88,7 @@ def verify_otp(request, user_id):
     return render(request, 'user_log/verify_otp.html', {'form': OTPForm(), 'message': message})
 
 
+# new
 @cache_control(no_cache=True, must_revalidate=True, no_store=True)
 def user_login(request):
     if request.user.is_authenticated:
@@ -95,16 +99,24 @@ def user_login(request):
         if form.is_valid():
             email = form.cleaned_data['email']
             password = form.cleaned_data['password']
+
+            if security_service.is_locked_out('user_login', email):
+                messages.error(request, "Too many failed login attempts. Please try again in 15 minutes.")
+                return render(request, 'user_log/user_login.html', {'form': form})
+
             try:
                 user = Account.objects.get(email=email)
                 if not user.check_password(password):
+                    security_service.register_failed_attempt('user_login', email)
                     messages.error(request, "Invalid email or password.")
                 elif not user.is_active:
                     messages.error(request, "Your account has been blocked. Contact support.")
                 else:
+                    security_service.clear_attempts('user_login', email)
                     login(request, user, backend='django.contrib.auth.backends.ModelBackend')
                     return redirect('userlog:index')
             except Account.DoesNotExist:
+                security_service.register_failed_attempt('user_login', email)
                 messages.error(request, "Invalid email or password.")
     else:
         form = AccountAuthenticationForm()
@@ -174,8 +186,6 @@ def reset_password(request):
         confirm = request.POST.get('confirm_password', '')
         if password != confirm:
             messages.error(request, "Passwords do not match.")
-        elif len(password) < 8:
-            messages.error(request, "Password must be at least 8 characters.")
         else:
             try:
                 user_service.reset_user_password(user, password)
@@ -183,6 +193,9 @@ def reset_password(request):
                 request.session.pop('otp_verified', None)
                 messages.success(request, "Password reset successfully.")
                 return redirect('userlog:user_login')
+            except DjangoValidationError as e:
+                for err in e.messages:
+                    messages.error(request, err)
             except Exception:
                 logger.exception("Error resetting password for user %s", user.id)
                 messages.error(request, "Failed to reset password.")
@@ -463,18 +476,19 @@ def reset_password_set_new(request):
         confirm = request.POST.get('confirm_password', '')
         if new_password != confirm:
             messages.error(request, "Passwords do not match.")
-        elif len(new_password) < 8:
-            messages.error(request, "Password must be at least 8 characters.")
         else:
             try:
                 user_service.reset_user_password(user, new_password)
                 request.session.pop('reset_email', None)
                 request.session.pop('otp_verified', None)
-                messages.success(request, "Password updated successfully.")
+                messages.success(request, "Password reset successfully.")
                 return redirect('userlog:user_login')
+            except DjangoValidationError as e:
+                for err in e.messages:
+                    messages.error(request, err)
             except Exception:
-                logger.exception("Error setting new password for user %s", user.id)
-                messages.error(request, "Failed to update password.")
+                logger.exception("Error resetting password for user %s", user.id)
+                messages.error(request, "Failed to reset password.")
 
     return render(request, 'user_log/reset_password_set_new.html')
 

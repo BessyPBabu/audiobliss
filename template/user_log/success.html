@@ -5,22 +5,153 @@
 {% block body %}
 {% load static %}
 
+<style>
+    .success-card {
+        max-width: 460px;
+        margin: 60px auto;
+        border: none;
+        border-radius: 16px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+        overflow: hidden;
+        text-align: center;
+    }
 
-<div class="container mb-25 mt-25">
-    <div class="row">
-        <div class="col-md-8 offset-md-2">
-            <div class="card">
-                <div class="card-body text-center">
-                    <div class="mb-3">
-                        <img src="{% static 'user/imgs/theme/success-tick.png' %}" alt="Success Tick" class="img-fluid" style="width: 100px; height: 100px;">
-                    </div>
-                    <h2 class="card-title">Order Placed Successfully!</h2>
-                    <p class="card-text">Thank you for your purchase. Your order has been received and is being processed.</p>
-                    <a href="{% url 'userlog:index' %}" class="btn btn-primary">Continue Shopping</a>
-                    {% if latest_order %}
-                        <a href="{% url 'orders:invoice' latest_order.id %}" class="btn btn-secondary">View Invoice</a>
-                    {% endif %}
-                </div>
+    .success-card .card-header {
+        background: linear-gradient(135deg, #088178, #04a196);
+        color: #fff;
+        border: none;
+        padding: 22px;
+        font-size: 20px;
+        font-weight: 600;
+    }
+
+    .success-card .card-body {
+        padding: 45px 30px;
+    }
+
+    .success-icon {
+        width: 90px;
+        height: 90px;
+        margin: 0 auto 20px;
+    }
+
+    .success-icon .checkmark-circle {
+        stroke: #2e7d32;
+        stroke-width: 3;
+        fill: none;
+        stroke-dasharray: 166;
+        stroke-dashoffset: 166;
+        animation: draw-circle 0.5s ease-out forwards;
+    }
+
+    .success-icon .checkmark-check {
+        stroke: #2e7d32;
+        stroke-width: 4;
+        fill: none;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+        stroke-dasharray: 48;
+        stroke-dashoffset: 48;
+        animation: draw-check 0.35s 0.5s ease-out forwards;
+    }
+
+    @keyframes draw-circle {
+        to { stroke-dashoffset: 0; }
+    }
+
+    @keyframes draw-check {
+        to { stroke-dashoffset: 0; }
+    }
+
+    .success-title {
+        font-size: 22px;
+        font-weight: 700;
+        color: #2b2b2b;
+        margin-bottom: 8px;
+    }
+
+    .success-subtext {
+        color: #777;
+        font-size: 14px;
+        margin-bottom: 6px;
+    }
+
+    .order-id-pill {
+        display: inline-block;
+        background-color: #e3f2f1;
+        color: #088178;
+        font-size: 13px;
+        font-weight: 600;
+        padding: 6px 16px;
+        border-radius: 20px;
+        margin: 14px 0 28px;
+    }
+
+    .success-actions {
+        display: flex;
+        gap: 12px;
+        justify-content: center;
+        flex-wrap: wrap;
+    }
+
+    .btn-success-primary {
+        background-color: #088178;
+        border: none;
+        padding: 12px 28px;
+        font-size: 14px;
+        font-weight: 600;
+        border-radius: 30px;
+        color: #fff;
+        text-decoration: none;
+        transition: background-color 0.2s ease, transform 0.15s ease;
+    }
+
+    .btn-success-primary:hover {
+        background-color: #066f66;
+        transform: translateY(-2px);
+        color: #fff;
+    }
+
+    .btn-success-outline {
+        background-color: transparent;
+        border: 2px solid #088178;
+        padding: 10px 26px;
+        font-size: 14px;
+        font-weight: 600;
+        border-radius: 30px;
+        color: #088178;
+        text-decoration: none;
+        transition: background-color 0.2s ease, color 0.2s ease;
+    }
+
+    .btn-success-outline:hover {
+        background-color: #088178;
+        color: #fff;
+    }
+</style>
+
+<div class="container">
+    <div class="success-card card">
+        <div class="card-header">Order Confirmed</div>
+        <div class="card-body">
+            <svg class="success-icon" viewBox="0 0 52 52">
+                <circle class="checkmark-circle" cx="26" cy="26" r="24"/>
+                <path class="checkmark-check" d="M14 27l7 7 17-17"/>
+            </svg>
+
+            <div class="success-title">Order Placed Successfully!</div>
+            <p class="success-subtext">Thank you for shopping with Audio Bliss.</p>
+            <p class="success-subtext">Your order has been received and is being processed.</p>
+
+            {% if latest_order %}
+            <div class="order-id-pill">Order ID: {{ latest_order.order_id }}</div>
+            {% endif %}
+
+            <div class="success-actions">
+                <a href="{% url 'userlog:index' %}" class="btn-success-primary">Continue Shopping</a>
+                {% if latest_order %}
+                    <a href="{% url 'orders:invoice' latest_order.id %}" class="btn-success-outline">View Invoice</a>
+                {% endif %}
             </div>
         </div>
     </div>

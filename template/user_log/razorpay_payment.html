@@ -1,44 +1,207 @@
 {% extends 'user_log/baseuser.html' %}
 {% block title %}Audio Bliss - Payment{% endblock %}
 {% block body %}
-<div class="container mt-5">
-    <div class="row justify-content-center">
-        <div class="col-md-6">
-            <div class="card">
-                <div class="card-header text-center">
-                    <h2 class="mb-0">Complete Payment</h2>
-                </div>
-                <div class="card-body">
-                    <!-- Payment Button -->
-                    <div class="text-center mb-4">
-                        <button id="rzp-button1" class="btn btn-primary btn-lg">Pay with Razorpay</button>
-                    </div>
 
-                    <!-- Payment Processing Spinner -->
-                    <div id="payment-processing" class="text-center" style="display: none;">
-                        <p>Your payment is being processed...</p>
-                        <div class="spinner-border text-primary" role="status">
-                            <span class="sr-only">Loading...</span>
-                        </div>
-                    </div>
+<style>
+    .payment-card {
+        max-width: 460px;
+        margin: 60px auto;
+        border: none;
+        border-radius: 16px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+        overflow: hidden;
+        text-align: center;
+    }
 
-                    <!-- Payment Success Message with SVG -->
-                    <div id="payment-success" class="text-center" style="display: none;">
-                        <p>Payment successful!</p>
-                        <svg width="48" height="48" fill="green" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M16 8A8 8 0 1 0 0 8a8 8 0 0 0 16 0zM7.293 10.707a1 1 0 0 1-1.414 0l-2.5-2.5a1 1 0 0 1 1.414-1.414L7 8.586l4.293-4.293a1 1 0 0 1 1.414 1.414l-5 5z"/>
-                        </svg>
-                    </div>
+    .payment-card .card-header {
+        background: linear-gradient(135deg, #088178, #04a196);
+        color: #fff;
+        border: none;
+        padding: 22px;
+        font-size: 20px;
+        font-weight: 600;
+    }
 
-                    <!-- Payment Error Message with SVG -->
-                    <div id="payment-error" class="text-center" style="display: none;">
-                        <p>Payment failed. Please try again.</p>
-                        <svg width="48" height="48" fill="red" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm3.536-10.464a1 1 0 0 1 0 1.414L9.414 8l2.122 2.122a1 1 0 0 1-1.414 1.414L8 9.414l-2.122 2.122a1 1 0 0 1-1.414-1.414L6.586 8 4.464 5.878a1 1 0 0 1 1.414-1.414L8 6.586l2.122-2.122a1 1 0 0 1 1.414 0z"/>
-                        </svg>
-                    </div>
-                </div>
+    .payment-card .card-body {
+        padding: 45px 30px;
+        min-height: 260px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .pay-btn {
+        background-color: #088178;
+        border: none;
+        padding: 14px 40px;
+        font-size: 16px;
+        font-weight: 600;
+        border-radius: 30px;
+        color: #fff;
+        transition: background-color 0.2s ease, transform 0.15s ease;
+    }
+
+    .pay-btn:hover {
+        background-color: #066f66;
+        transform: translateY(-2px);
+    }
+
+    /* ── Loader ring ── */
+    .payment-loader-ring {
+        width: 70px;
+        height: 70px;
+        border: 5px solid #e3f2f1;
+        border-top-color: #088178;
+        border-radius: 50%;
+        margin: 0 auto 24px;
+        animation: spin 0.85s linear infinite;
+    }
+
+    @keyframes spin {
+        to { transform: rotate(360deg); }
+    }
+
+    .processing-text {
+        font-size: 16px;
+        font-weight: 500;
+        color: #333;
+    }
+
+    .processing-text .dots span {
+        opacity: 0;
+        animation: dot-fade 1.4s infinite;
+    }
+
+    .processing-text .dots span:nth-child(1) { animation-delay: 0s; }
+    .processing-text .dots span:nth-child(2) { animation-delay: 0.2s; }
+    .processing-text .dots span:nth-child(3) { animation-delay: 0.4s; }
+
+    @keyframes dot-fade {
+        0%, 20% { opacity: 0; }
+        50% { opacity: 1; }
+        100% { opacity: 0; }
+    }
+
+    /* ── Success checkmark ── */
+    .result-icon {
+        width: 90px;
+        height: 90px;
+        margin: 0 auto 20px;
+    }
+
+    .checkmark-circle {
+        stroke: #2e7d32;
+        stroke-width: 3;
+        fill: none;
+        stroke-dasharray: 166;
+        stroke-dashoffset: 166;
+        animation: draw-circle 0.5s ease-out forwards;
+    }
+
+    .checkmark-check {
+        stroke: #2e7d32;
+        stroke-width: 4;
+        fill: none;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+        stroke-dasharray: 48;
+        stroke-dashoffset: 48;
+        animation: draw-check 0.35s 0.5s ease-out forwards;
+    }
+
+    /* ── Error cross ── */
+    .cross-circle {
+        stroke: #c62828;
+        stroke-width: 3;
+        fill: none;
+        stroke-dasharray: 166;
+        stroke-dashoffset: 166;
+        animation: draw-circle 0.5s ease-out forwards;
+    }
+
+    .cross-line {
+        stroke: #c62828;
+        stroke-width: 4;
+        stroke-linecap: round;
+        fill: none;
+        stroke-dasharray: 30;
+        stroke-dashoffset: 30;
+        animation: draw-check 0.3s 0.5s ease-out forwards;
+    }
+
+    @keyframes draw-circle {
+        to { stroke-dashoffset: 0; }
+    }
+
+    @keyframes draw-check {
+        to { stroke-dashoffset: 0; }
+    }
+
+    .result-card.error-shake {
+        animation: shake 0.45s 0.5s;
+    }
+
+    @keyframes shake {
+        10%, 90% { transform: translateX(-2px); }
+        20%, 80% { transform: translateX(4px); }
+        30%, 50%, 70% { transform: translateX(-8px); }
+        40%, 60% { transform: translateX(8px); }
+    }
+
+    .result-title {
+        font-size: 20px;
+        font-weight: 700;
+        margin-bottom: 6px;
+    }
+
+    .result-subtext {
+        color: #777;
+        font-size: 14px;
+    }
+</style>
+
+<div class="container">
+    <div class="payment-card card">
+        <div class="card-header">Complete Payment</div>
+        <div class="card-body">
+
+            <!-- Pay Button -->
+            <div id="rzp-trigger-wrap">
+                <button id="rzp-button1" class="pay-btn">Pay with Razorpay</button>
             </div>
+
+            <!-- Processing -->
+            <div id="payment-processing" style="display: none;">
+                <div class="payment-loader-ring"></div>
+                <p class="processing-text">
+                    Processing your payment
+                    <span class="dots"><span>.</span><span>.</span><span>.</span></span>
+                </p>
+                <p class="result-subtext">Please don't close or refresh this page.</p>
+            </div>
+
+            <!-- Success -->
+            <div id="payment-success" style="display: none;">
+                <svg class="result-icon" viewBox="0 0 52 52">
+                    <circle class="checkmark-circle" cx="26" cy="26" r="24"/>
+                    <path class="checkmark-check" d="M14 27l7 7 17-17"/>
+                </svg>
+                <p class="result-title">Payment Successful</p>
+                <p class="result-subtext">Redirecting you to your order confirmation…</p>
+            </div>
+
+            <!-- Error -->
+            <div id="payment-error" class="result-card" style="display: none;">
+                <svg class="result-icon" viewBox="0 0 52 52">
+                    <circle class="cross-circle" cx="26" cy="26" r="24"/>
+                    <path class="cross-line" d="M18 18l16 16"/>
+                    <path class="cross-line" d="M34 18l-16 16"/>
+                </svg>
+                <p class="result-title">Payment Failed</p>
+                <p class="result-subtext" id="payment-error-message">Please try again.</p>
+            </div>
+
         </div>
     </div>
 </div>
@@ -56,32 +219,27 @@ document.addEventListener('DOMContentLoaded', function() {
         "description": "Order Payment",
         "order_id": "{{ razorpay_order_id }}",
         "handler": function (response) {
-            // Handle successful payment
-            // window.location.href('URL'); // Redirect after success
-            // alert(response.razorpay_payment_id);
-            // alert(response.razorpay_order_id);
-            // alert(response.razorpay_signature);
+            $('#rzp-trigger-wrap').fadeOut(150, function () {
+                $('#payment-processing').fadeIn(200);
+            });
 
-            $('#payment-processing').show();
-            $('#rzp-button1').hide();
-
-            // Send payment info to server for verification
             $.ajax({
                 url: '{% url "cart:payment_verify" %}',
                 type: 'POST',
                 data: {
                     razorpay_payment_id: response.razorpay_payment_id,
                     razorpay_order_id: response.razorpay_order_id,
-                    razorpay_signature: response.razorpay_signature
+                    razorpay_signature: response.razorpay_signature,
+                    csrfmiddlewaretoken: $('input[name=csrfmiddlewaretoken]').val()
                 },
                 success: function(serverResponse) {
-                    if(serverResponse.status === 'success') {
-                        $('#payment-processing').hide();
-                        $('#payment-success').show();
-                        // Redirect after a short delay
+                    if (serverResponse.status === 'success') {
+                        $('#payment-processing').fadeOut(150, function () {
+                            $('#payment-success').fadeIn(250);
+                        });
                         setTimeout(function() {
                             window.location.href = '{% url "orders:success" %}';
-                        }, 2000);
+                        }, 2200);
                     } else {
                         showError(serverResponse.message);
                     }
@@ -100,29 +258,29 @@ document.addEventListener('DOMContentLoaded', function() {
             "address": "Razorpay Corporate Office"
         },
         "theme": {
-            "color": "#3399cc"
+            "color": "#088178"
         }
     };
 
     var rzp1 = new Razorpay(options);
 
-    // Handle payment failures
     rzp1.on('payment.failed', function (response) {
         showError(response.error.description);
-        window.location.href = '{% url "cart:payment_failed" %}?order_id={{ order.order_id }}';
-        
+        setTimeout(function () {
+            window.location.href = '{% url "cart:payment_failed" %}?order_id={{ order.order_id }}';
+        }, 1800);
     });
 
     document.getElementById('rzp-button1').onclick = function(e) {
         rzp1.open();
         e.preventDefault();
-        // Uncomment the following line if you want to disable the button on click
-        // this.disabled = true;
     };
 
     function showError(message) {
-        $('#payment-processing').hide();
-        $('#payment-error').show().find('p').text(message);
+        $('#payment-processing').fadeOut(150, function () {
+            $('#payment-error-message').text(message || 'Please try again.');
+            $('#payment-error').addClass('error-shake').fadeIn(250);
+        });
     }
 });
 </script>

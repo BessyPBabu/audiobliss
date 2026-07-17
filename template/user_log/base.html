@@ -14,6 +14,8 @@
     <meta property="og:image" content="">
     <link rel="shortcut icon" type="image/x-icon" href="{% static 'user/imgs/theme/favicon.ico' %}">
     <link rel="stylesheet" href="{% static 'user/css/main.css' %}">
+    <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
+</head>
 </head>
 
 <body>
@@ -294,6 +296,11 @@
     <script src="{% static 'user/js/plugins/jquery.elevatezoom.js' %}"></script>
     <script src="{% static 'user/js/main.js' %}"></script>
     <script src="{% static 'user/js/shop.js' %}"></script>
+
+    <!-- Toast notifications -->
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
+    <script src="{% static 'user/js/toast.js' %}"></script>
+    {% include 'partials/toast_messages.html' %}
 
     <!-- Mobile menu toggle -->
     <script>

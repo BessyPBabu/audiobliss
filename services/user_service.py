@@ -3,6 +3,7 @@ import random
 import string
 from datetime import timedelta
 from django.conf import settings
+from django.contrib.auth.password_validation import validate_password
 from django.core.mail import send_mail
 from django.utils import timezone
 
@@ -28,33 +29,42 @@ def send_otp_email(email, otp_code):
 
 def create_and_send_otp(user):
     from user_log.models import OTP
-    # Deactivate existing OTPs
+
     OTP.objects.filter(user=user, is_active=True).update(is_active=False)
     otp = OTP.objects.create(user=user)
     send_otp_email(user.email, otp.otp)
     return otp
-
 
 def verify_otp(user, otp_code):
     from user_log.models import OTP
     otp = OTP.objects.filter(user=user, is_active=True).order_by('-created_at').first()
 
     if otp is None:
-        return False, "No active OTP found."
+        return False, "No active OTP found. Please request a new one."
+
+    if otp.is_locked():
+        otp.is_active = False
+        otp.save(update_fields=['is_active'])
+        logger.warning("OTP locked after %s failed attempts for user %s", otp.attempts, user.id)
+        return False, "Too many incorrect attempts. Please request a new OTP."
 
     if (timezone.now() - otp.created_at) > timedelta(minutes=OTP_VALIDITY_MINUTES):
         otp.is_active = False
         otp.save(update_fields=['is_active'])
-        return False, "OTP has expired."
+        return False, "OTP has expired. Please request a new one."
 
     if otp.otp != otp_code:
-        return False, "Invalid OTP."
+        otp.register_failed_attempt()
+        if otp.is_locked():
+            logger.warning("OTP locked after %s failed attempts for user %s", otp.attempts, user.id)
+            return False, "Too many incorrect attempts. Please request a new OTP."
+        remaining = max(OTP.MAX_ATTEMPTS - otp.attempts, 0)
+        return False, f"Invalid OTP. {remaining} attempt(s) remaining."
 
     otp.is_active = False
     otp.save(update_fields=['is_active'])
     logger.info("OTP verified for user %s", user.id)
     return True, "OTP verified successfully."
-
 
 def can_resend_otp(user):
     from user_log.models import OTP
@@ -70,7 +80,9 @@ def activate_user(user):
     logger.info("Activated user %s", user.id)
 
 
+
 def reset_user_password(user, new_password):
+    validate_password(new_password, user=user)
     user.set_password(new_password)
     user.save(update_fields=['password'])
     logger.info("Password reset for user %s", user.id)

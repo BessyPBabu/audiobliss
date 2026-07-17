@@ -8,7 +8,10 @@ import razorpay
 
 logger = logging.getLogger(__name__)
 
-SERVICE_CHARGE = Decimal('65')
+# new
+from django.conf import settings
+
+SERVICE_CHARGE = Decimal(settings.CART_SERVICE_CHARGE)
 
 
 def get_razorpay_client():
@@ -157,19 +160,29 @@ def _confirm_order(order, payment):
     OrderProduct.objects.filter(order=order).update(ordered=True)
 
 
+# new
 def _decrement_stock(order):
     from orders.models import OrderProduct
+    from product_management.models import ProductVariant
+
     items = OrderProduct.objects.filter(order=order).select_related('product_variant')
-    for item in items:
-        variant = item.product_variant
-        if variant.stock < item.quantity:
-            logger.error(
-                "Insufficient stock for variant %s during order %s confirmation",
-                variant.id, order.order_id,
-            )
-            raise ValueError(f"Insufficient stock for {variant.product.title}")
-        variant.stock -= item.quantity
-        variant.save(update_fields=['stock'])
+    variant_ids = [item.product_variant_id for item in items]
+
+    with transaction.atomic():
+        locked_variants = {
+            v.id: v for v in ProductVariant.objects.select_for_update()
+            .select_related('product').filter(id__in=variant_ids)
+        }
+        for item in items:
+            variant = locked_variants[item.product_variant_id]
+            if variant.stock < item.quantity:
+                logger.error(
+                    "Insufficient stock for variant %s during order %s confirmation",
+                    variant.id, order.order_id,
+                )
+                raise ValueError(f"Insufficient stock for {variant.product.title}")
+            variant.stock -= item.quantity
+            variant.save(update_fields=['stock'])
 
 
 def _razorpay_context(request, order, razorpay_order, amount):

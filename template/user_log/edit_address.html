@@ -4,12 +4,92 @@
 {% load static %}
 {% block body %}
 
+<style>
+    .edit-address-card {
+        border: none;
+        border-radius: 16px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+        overflow: hidden;
+    }
+
+    .edit-address-card .card-header {
+        background: linear-gradient(135deg, #088178, #04a196);
+        color: #fff;
+        border: none;
+        padding: 20px 25px;
+    }
+
+    .edit-address-card .card-body {
+        padding: 35px;
+    }
+
+    .edit-address-card label {
+        font-weight: 600;
+        font-size: 13px;
+        color: #333;
+        margin-bottom: 6px;
+        display: block;
+    }
+
+    .edit-address-card .form-control,
+    .edit-address-card input[type="text"] {
+        border-radius: 8px;
+        border: 1px solid #e0e0e0;
+        padding: 10px 14px;
+        width: 100%;
+        margin-bottom: 18px;
+        transition: border-color 0.2s ease;
+    }
+
+    .edit-address-card .form-control:focus,
+    .edit-address-card input:focus {
+        border-color: #088178;
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(8, 129, 120, 0.1);
+    }
+
+    .btn-edit-save {
+        background-color: #088178;
+        border: none;
+        padding: 12px 32px;
+        font-size: 14px;
+        font-weight: 600;
+        border-radius: 30px;
+        color: #fff;
+        text-decoration: none !important;
+        transition: background-color 0.2s ease, transform 0.15s ease;
+    }
+    .btn-edit-save:hover {
+        background-color: #066f66;
+        transform: translateY(-2px);
+        color: #fff;
+        text-decoration: none !important;
+    }
+
+    .btn-edit-cancel {
+        background-color: transparent;
+        border: 2px solid #ddd;
+        padding: 10px 26px;
+        font-size: 14px;
+        font-weight: 600;
+        border-radius: 30px;
+        color: #666;
+        text-decoration: none !important;
+        transition: border-color 0.2s ease, color 0.2s ease;
+    }
+    .btn-edit-cancel:hover {
+        border-color: #088178;
+        color: #088178;
+        text-decoration: none !important;
+    }
+</style>
+
 <div class="container mt-5">
     <div class="row justify-content-center">
         <div class="col-md-8">
-            <div class="card shadow">
-                <div class="card-header bg-primary text-white">
-                    <h3>Edit Address</h3>
+            <div class="edit-address-card">
+                <div class="card-header">
+                    <h3 class="mb-0">Edit Address</h3>
                 </div>
                 <div class="card-body">
                     <form method="POST" novalidate>
@@ -18,9 +98,7 @@
                             <label for="house_name">House Name</label>
                             {{ address_form.house_name }}
                             {% if address_form.house_name.errors %}
-                                <div class="text-danger">
-                                    {{ address_form.house_name.errors.as_text }}
-                                </div>
+                                <div class="text-danger">{{ address_form.house_name.errors.as_text }}</div>
                             {% endif %}
                         </div>
 
@@ -28,9 +106,7 @@
                             <label for="streat_name">Street Name</label>
                             {{ address_form.streat_name }}
                             {% if address_form.streat_name.errors %}
-                                <div class="text-danger">
-                                    {{ address_form.streat_name.errors.as_text }}
-                                </div>
+                                <div class="text-danger">{{ address_form.streat_name.errors.as_text }}</div>
                             {% endif %}
                         </div>
 
@@ -38,9 +114,7 @@
                             <label for="post_office">Post Office</label>
                             {{ address_form.post_office }}
                             {% if address_form.post_office.errors %}
-                                <div class="text-danger">
-                                    {{ address_form.post_office.errors.as_text }}
-                                </div>
+                                <div class="text-danger">{{ address_form.post_office.errors.as_text }}</div>
                             {% endif %}
                         </div>
 
@@ -48,9 +122,7 @@
                             <label for="place">Place</label>
                             {{ address_form.place }}
                             {% if address_form.place.errors %}
-                                <div class="text-danger">
-                                    {{ address_form.place.errors.as_text }}
-                                </div>
+                                <div class="text-danger">{{ address_form.place.errors.as_text }}</div>
                             {% endif %}
                         </div>
 
@@ -58,9 +130,7 @@
                             <label for="district">District</label>
                             {{ address_form.district }}
                             {% if address_form.district.errors %}
-                                <div class="text-danger">
-                                    {{ address_form.district.errors.as_text }}
-                                </div>
+                                <div class="text-danger">{{ address_form.district.errors.as_text }}</div>
                             {% endif %}
                         </div>
 
@@ -68,9 +138,7 @@
                             <label for="state">State</label>
                             {{ address_form.state }}
                             {% if address_form.state.errors %}
-                                <div class="text-danger">
-                                    {{ address_form.state.errors.as_text }}
-                                </div>
+                                <div class="text-danger">{{ address_form.state.errors.as_text }}</div>
                             {% endif %}
                         </div>
 
@@ -78,9 +146,7 @@
                             <label for="country">Country</label>
                             {{ address_form.country }}
                             {% if address_form.country.errors %}
-                                <div class="text-danger">
-                                    {{ address_form.country.errors.as_text }}
-                                </div>
+                                <div class="text-danger">{{ address_form.country.errors.as_text }}</div>
                             {% endif %}
                         </div>
 
@@ -88,14 +154,14 @@
                             <label for="pincode">Pincode</label>
                             {{ address_form.pincode }}
                             {% if address_form.pincode.errors %}
-                                <div class="text-danger">
-                                    {{ address_form.pincode.errors.as_text }}
-                                </div>
+                                <div class="text-danger">{{ address_form.pincode.errors.as_text }}</div>
                             {% endif %}
                         </div>
 
-                        <button type="submit" class="btn btn-primary">Update Address</button>
-                        <a href="{% url 'userlog:user_profile' %}" class="btn btn-secondary">Cancel</a>
+                        <div class="mt-4">
+                            <button type="submit" class="btn-edit-save">Update Address</button>
+                            <a href="{% url 'userlog:user_profile' %}" class="btn-edit-cancel ml-2">Cancel</a>
+                        </div>
                     </form>
                 </div>
             </div>

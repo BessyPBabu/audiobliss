@@ -2,159 +2,241 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Invoice - Audiobliss</title>
-    {% load static %}
-    <link rel="stylesheet" href="{% static 'css/invoice.css' %}">
+    <title>Invoice - {{ order.order_id }} - Audiobliss</title>
     <style>
+        @page {
+            size: A4;
+            margin: 1.5cm;
+        }
         body {
-            font-family: Arial, sans-serif;
+            font-family: Helvetica, Arial, sans-serif;
+            color: #2b2b2b;
+            font-size: 13px;
+            margin: 0;
+            padding: 0;
             background-color: #f4f4f4;
-            color: #333;
         }
-        .invoice-container {
-            max-width: 800px;
-            margin: 40px auto;
-            padding: 20px;
-            border: 1px solid #ddd;
-            background-color: #fff;
-            box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+        .page-outer {
+            width: 100%;
         }
-        h1 {
-            text-align: center;
-            color: #333;
-            margin-bottom: 30px;
+        .invoice-wrap {
+            width: 700px;
+            background-color: #ffffff;
         }
-        h2 {
-            color: #666;
-            margin-bottom: 10px;
-            border-bottom: 2px solid #ddd;
+        .invoice-padding {
+            padding: 30px;
+        }
+        table.letterhead {
+            width: 100%;
+            border-bottom: 3px solid #088178;
+        }
+        table.letterhead td {
+            vertical-align: top;
+            padding-bottom: 15px;
+        }
+        .brand-name {
+            font-size: 26px;
+            font-weight: bold;
+            color: #088178;
+        }
+        .brand-tagline {
+            font-size: 11px;
+            color: #777777;
+        }
+        .invoice-meta {
+            text-align: right;
+            font-size: 12px;
+            color: #444444;
+        }
+        .invoice-meta .invoice-title {
+            font-size: 20px;
+            font-weight: bold;
+            color: #2b2b2b;
+        }
+        .section-title {
+            font-size: 13px;
+            font-weight: bold;
+            text-transform: uppercase;
+            color: #088178;
+            border-bottom: 1px solid #e0e0e0;
             padding-bottom: 5px;
         }
-        .order-details, .product-details, .billing-shipping {
-            margin-bottom: 30px;
-        }
-        p {
-            margin: 5px 0;
-            font-size: 14px;
-        }
-        table {
+        table.info-table {
             width: 100%;
-            border-collapse: collapse;
-            margin-bottom: 20px;
         }
-        table, th, td {
-            border: 1px solid #ddd;
+        table.info-table td {
+            vertical-align: top;
+            width: 50%;
+            padding-top: 20px;
+            padding-right: 15px;
         }
-        th, td {
-            padding: 12px;
-            text-align: left;
-        }
-        th {
-            background-color: #f8f8f8;
-        }
-        .total-row {
-            font-weight: bold;
-            background-color: #f0f0f0;
-        }
-        .card {
-            border: 1px solid #ddd;
-            border-radius: 5px;
-            overflow: hidden;
-        }
-        .card-header {
-            background-color: #007bff;
-            color: #fff;
-            padding: 10px;
-            font-size: 16px;
-            text-align: center;
-        }
-        .card-body {
-            padding: 15px;
-            font-size: 14px;
+        table.info-table p {
+            margin: 3px 0;
             line-height: 1.5;
         }
-        .btn {
-            display: inline-block;
-            padding: 10px 20px;
+        table.items-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        table.items-table th {
+            background-color: #088178;
+            color: #ffffff;
+            padding: 10px;
+            text-align: left;
+            font-size: 12px;
+            text-transform: uppercase;
+        }
+        table.items-table td {
+            padding: 10px;
+            border-bottom: 1px solid #eeeeee;
+            font-size: 12px;
+        }
+        table.items-table .align-right {
+            text-align: right;
+        }
+        table.totals-table {
+            width: 100%;
+            margin-top: 10px;
+        }
+        table.totals-table td {
+            padding: 6px 10px;
+            font-size: 13px;
+        }
+        table.totals-table .label {
+            text-align: right;
+            color: #555555;
+        }
+        table.totals-table .value {
+            text-align: right;
+            width: 120px;
+        }
+        table.totals-table .grand-total .label,
+        table.totals-table .grand-total .value {
             font-size: 16px;
-            color: #fff;
-            background-color: #007bff;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            text-decoration: none;
+            font-weight: bold;
+            color: #088178;
+            border-top: 2px solid #088178;
+            padding-top: 10px;
+        }
+        .footer-note {
+            margin-top: 30px;
+            padding-top: 15px;
+            border-top: 1px solid #e0e0e0;
+            font-size: 11px;
+            color: #999999;
             text-align: center;
         }
-
-        .btn:hover {
-            background-color: #0056b3;
+        .btn-download {
+            display: inline-block;
+            padding: 10px 24px;
+            background-color: #088178;
+            color: #ffffff;
+            text-decoration: none;
+            border: none;
+            font-size: 14px;
+        }
+        .no-print {
+            margin-top: 20px;
+            text-align: center;
         }
     </style>
 </head>
 <body>
-    <div class="invoice-container">
-        <h1>Invoice</h1>
-        
-
-        <!-- Order Details -->
-        <div class="order-details">
-            <h2>Order Details</h2>
-            <p><strong>Order ID:</strong> {{ order.id }}</p>
-            <p><strong>Order Date:</strong> {{ order.created_at }}</p>
-            <p><strong>Total Amount:</strong> ₹{{ order.total_amount }}</p>
-            
-        </div>
-
-        <!-- Product Details -->
-        <div class="product-details">
-            <h2>Products</h2>
-            <table>
-                <thead>
+    <table class="page-outer" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+            <td align="center">
+                <table class="invoice-wrap" cellpadding="0" cellspacing="0" border="0">
                     <tr>
-                        <th>Product</th>
-                        <th>Quantity</th>
-                        <th>Price</th>
-                        <th>Total</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for item in order_items %}
-                    <tr>
-                        <td>{{ item.product_variant.product.title }}</td>
-                        <td>{{ item.quantity }}</td>
-                        <td>₹{{ item.product_variant.price }}</td>
-                        <td>₹{{ item.total_price|floatformat:2 }}</td>
-                    </tr>
-                    {% endfor %}
-                    <tr class="total-row">
-                        <td colspan="3"> Total</td>
-                        <td>₹{{ order.total_amount }}</td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
+                        <td class="invoice-padding">
 
-        <!-- Billing and Shipping -->
-        <div class="billing-shipping">
-            <div class="card">
-                <div class="card-header">
-                    Shipping Address
-                </div>
-                <div class="card-body">
-                    <!-- <p><strong>Name:</strong> {{ order.address.user }}</p> -->
-                    <p><strong>House Name:</strong> {{ order.address.house_name }}</p>
-                    <p><strong>Street:</strong> {{ order.address.streat_name }}</p>
-                    <p><strong>City:</strong> {{ order.address.place }}</p>
-                    <p><strong>District:</strong> {{ order.address.district }}</p>
-                    <p><strong>State:</strong> {{ order.address.state }}</p>
-                    <p><strong>Pincode:</strong> {{ order.address.pincode }}</p>
-                </div>
-            </div>
-        </div>
-        <form method="get" action="">
-            <button type="submit" name="download" value="pdf" class="btn btn-primary">Download Invoice as PDF</button>
-        </form>
-        
-    </div>
+                            <table class="letterhead">
+                                <tr>
+                                    <td>
+                                        <div class="brand-name">Audio Bliss</div>
+                                        <div class="brand-tagline">Premium Audio Gear</div>
+                                    </td>
+                                    <td class="invoice-meta">
+                                        <div class="invoice-title">INVOICE</div>
+                                        <p><strong>Order ID:</strong> {{ order.order_id }}</p>
+                                        <p><strong>Date:</strong> {{ order.created_at|date:"d M Y" }}</p>
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <table class="info-table">
+                                <tr>
+                                    <td>
+                                        <div class="section-title">Billed To</div>
+                                        <p>{{ order.user.username }}</p>
+                                        <p>{{ order.user.email }}</p>
+                                        {% if order.user.phone %}<p>{{ order.user.phone }}</p>{% endif %}
+                                    </td>
+                                    <td>
+                                        <div class="section-title">Shipping Address</div>
+                                        <p>{{ order.address.house_name }}, {{ order.address.streat_name }}</p>
+                                        <p>{{ order.address.place }}, {{ order.address.district }}</p>
+                                        <p>{{ order.address.state }} - {{ order.address.pincode }}</p>
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <div class="section-title">Order Items</div>
+                            <table class="items-table">
+                                <thead>
+                                    <tr>
+                                        <th>Product</th>
+                                        <th class="align-right">Qty</th>
+                                        <th class="align-right">Price</th>
+                                        <th class="align-right">Total</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for item in order_items %}
+                                    <tr>
+                                        <td>{{ item.product_variant.product.title }} ({{ item.product_variant.color.name }})</td>
+                                        <td class="align-right">{{ item.quantity }}</td>
+                                        <td class="align-right">₹{{ item.product_variant.price }}</td>
+                                        <td class="align-right">₹{{ item.total_price|floatformat:2 }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+
+                            <table class="totals-table">
+                                <tr>
+                                    <td class="label">Subtotal</td>
+                                    <td class="value">₹{{ order.order_total }}</td>
+                                </tr>
+                                {% if order.tax %}
+                                <tr>
+                                    <td class="label">Tax</td>
+                                    <td class="value">₹{{ order.tax }}</td>
+                                </tr>
+                                {% endif %}
+                                <tr class="grand-total">
+                                    <td class="label">Amount Paid</td>
+                                    <td class="value">₹{{ order.total_amount }}</td>
+                                </tr>
+                            </table>
+
+                            <div class="footer-note">
+                                Thank you for shopping with Audio Bliss. For support, contact us at support@audiobliss.com
+                            </div>
+
+                            {% if not is_pdf %}
+                            <div class="no-print">
+                                <form method="get" action="">
+                                    <button type="submit" name="download" value="pdf" class="btn-download">Download Invoice as PDF</button>
+                                </form>
+                            </div>
+                            {% endif %}
+
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
 </body>
 </html>

@@ -1,6 +1,6 @@
 import logging
 from django.contrib import messages
-from django.contrib.auth.decorators import login_required
+from admin_log.decorators import admin_required
 from django.shortcuts import render, redirect, get_object_or_404
 
 from .forms import OfferForm, ProductOfferForm, CategoryOfferForm
@@ -9,13 +9,13 @@ from .models import Offer, ProductOffer, CategoryOffer
 logger = logging.getLogger(__name__)
 
 
-@login_required
+@admin_required
 def offer_list(request):
     offers = Offer.objects.all().order_by('-id')
     return render(request, 'admin_log/offer_list.html', {'offers': offers})
 
 
-@login_required
+@admin_required
 def offer_detail(request, pk):
     offer = get_object_or_404(Offer, pk=pk)
     return render(request, 'admin_log/offer_detail.html', {
@@ -25,7 +25,7 @@ def offer_detail(request, pk):
     })
 
 
-@login_required
+@admin_required
 def offer_create(request):
     if request.method == 'POST':
         form = OfferForm(request.POST)
@@ -55,8 +55,7 @@ def offer_create(request):
 
     return render(request, 'admin_log/offer_form.html', {'form': form})
 
-
-@login_required
+@admin_required
 def offer_update(request, pk):
     offer = get_object_or_404(Offer, pk=pk)
     if request.method == 'POST':
@@ -77,7 +76,7 @@ def offer_update(request, pk):
     return render(request, 'admin_log/offer_form.html', {'form': form, 'offer': offer})
 
 
-@login_required
+@admin_required
 def offer_delete(request, pk):
     offer = get_object_or_404(Offer, pk=pk)
     if request.method == 'POST':
@@ -91,8 +90,7 @@ def offer_delete(request, pk):
 
     return render(request, 'admin_log/offer_confirm_delete.html', {'offer': offer})
 
-
-@login_required
+@admin_required
 def product_offer_create(request):
     if request.method == 'POST':
         form = ProductOfferForm(request.POST)
@@ -112,7 +110,7 @@ def product_offer_create(request):
     return render(request, 'admin_log/product_offer_form.html', {'form': form})
 
 
-@login_required
+@admin_required
 def category_offer_create(request):
     if request.method == 'POST':
         form = CategoryOfferForm(request.POST)

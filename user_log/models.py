@@ -49,9 +49,13 @@ class Account(AbstractBaseUser, PermissionsMixin):
         verbose_name_plural = 'Accounts'
 
 
+# new
 class OTP(models.Model):
+    MAX_ATTEMPTS = 5
+
     user = models.ForeignKey(Account, on_delete=models.CASCADE, related_name='otps')
     otp = models.CharField(max_length=6)
+    attempts = models.PositiveSmallIntegerField(default=0)
     created_at = models.DateTimeField(auto_now_add=True)
     is_active = models.BooleanField(default=True)
 
@@ -59,6 +63,17 @@ class OTP(models.Model):
         if not self.otp:
             self.otp = ''.join(random.choices(string.digits, k=6))
         super().save(*args, **kwargs)
+
+    def register_failed_attempt(self):
+        self.attempts += 1
+        if self.attempts >= self.MAX_ATTEMPTS:
+            self.is_active = False
+            self.save(update_fields=['attempts', 'is_active'])
+        else:
+            self.save(update_fields=['attempts'])
+
+    def is_locked(self):
+        return self.attempts >= self.MAX_ATTEMPTS
 
     def __str__(self):
         return f"OTP for {self.user.email}"

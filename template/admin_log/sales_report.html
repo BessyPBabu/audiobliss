@@ -86,7 +86,11 @@
                                 <td>₹{{ item.order.order_total }}</td>
                                 <td>{{ item.order.payment.payment_method }}</td>
                                 <td>{{ item.coupon_info }}</td>
-                                <td>{% autoescape off %}{{ item.item_details|safe }}{% endautoescape %}</td>
+                                <td>
+                                    {% for order_item in item.items %}
+                                        {{ order_item.product_variant.product.title }} (x{{ order_item.quantity }}) - ₹{{ order_item.product_price }}{% if not forloop.last %}<br>{% endif %}
+                                    {% endfor %}
+                                </td>
                                
                             </tr>
                             {% endfor %}

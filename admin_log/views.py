@@ -2,7 +2,6 @@ import logging
 from django.contrib import messages
 from django.contrib.auth import authenticate, login
 from django.contrib.auth import logout as auth_logout
-from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.db.models import Sum, Count
 from django.http import HttpResponseRedirect
@@ -12,12 +11,16 @@ from django.views.decorators.csrf import csrf_protect
 
 import services.report_service as report_service
 import services.order_service as order_service
+import services.security_service as security_service
+from admin_log.decorators import admin_required
 from orders.models import Order, OrderProduct, ReturnRequest
 from orders.forms import OrderForm
 from user_log.models import Account
 from product_management.models import Product
 
 logger = logging.getLogger(__name__)
+
+LOGIN_THROTTLE_KEY = 'admin_login'
 
 
 # ─── Auth ─────────────────────────────────────────────────────────────────────
@@ -30,11 +33,23 @@ def admin_login(request):
     if request.method == 'POST':
         email = request.POST.get('email', '').strip()
         password = request.POST.get('password', '')
+
+        if security_service.is_locked_out(LOGIN_THROTTLE_KEY, email):
+            messages.error(
+                request,
+                "Too many failed login attempts. Please try again in 15 minutes.",
+                extra_tags='login_error',
+            )
+            return render(request, 'admin_log/admin_login.html')
+
         user = authenticate(request, email=email, password=password)
         if user is not None and user.is_admin:
+            security_service.clear_attempts(LOGIN_THROTTLE_KEY, email)
             login(request, user)
             logger.info("Admin %s logged in", email)
             return redirect('adminlog:admin_dashboard')
+
+        security_service.register_failed_attempt(LOGIN_THROTTLE_KEY, email)
         logger.warning("Failed admin login attempt for %s", email)
         messages.error(request, "Invalid email or password.", extra_tags='login_error')
 
@@ -54,12 +69,9 @@ def base(request):
 
 # ─── Dashboard ────────────────────────────────────────────────────────────────
 
-@login_required(login_url='adminlog:admin_login')
+@admin_required
 @cache_control(no_cache=True, must_revalidate=True, no_store=True)
 def admin_dashboard(request):
-    if not request.user.is_admin:
-        return redirect('adminlog:admin_login')
-
     try:
         revenue = Order.objects.filter(is_ordered=True).aggregate(
             total=Sum('order_total')
@@ -94,11 +106,9 @@ def admin_dashboard(request):
 
 # ─── Users ────────────────────────────────────────────────────────────────────
 
+@admin_required
 @cache_control(no_cache=True, must_revalidate=True, no_store=True)
 def users_list(request):
-    if not request.user.is_superuser:
-        return redirect('adminlog:admin_login')
-
     search_query = request.GET.get('query', '').strip()
     user_qs = Account.objects.filter(is_superuser=False).order_by('id')
     if search_query:
@@ -114,10 +124,8 @@ def users_list(request):
     return render(request, 'admin_log/users_list.html', {'users': users})
 
 
+@admin_required
 def block_unblock_user(request, user_id):
-    if not request.user.is_superuser:
-        return redirect('adminlog:admin_login')
-
     user = get_object_or_404(Account, id=user_id)
     try:
         user.toggle_active()
@@ -132,10 +140,8 @@ def block_unblock_user(request, user_id):
 
 # ─── Orders ───────────────────────────────────────────────────────────────────
 
+@admin_required
 def order_list(request):
-    if not request.user.is_superuser:
-        return redirect('adminlog:admin_login')
-
     orders_qs = Order.objects.filter(is_ordered=True).select_related(
         'user', 'payment'
     ).order_by('-created_at')
@@ -150,11 +156,8 @@ def order_list(request):
     return render(request, 'admin_log/order_details.html', {'orders': orders})
 
 
-@login_required
+@admin_required
 def order_details(request, order_id):
-    if not request.user.is_superuser:
-        return redirect('adminlog:admin_login')
-
     order = get_object_or_404(Order, id=order_id)
     order_items = OrderProduct.objects.filter(order=order).select_related(
         'product_variant__product', 'product_variant__color'
@@ -168,7 +171,6 @@ def order_details(request, order_id):
             if order_form.is_valid():
                 try:
                     updated_order = order_form.save()
-                    # Process refund if order is being cancelled
                     if updated_order.status == 'Cancelled' and not updated_order.is_refunded:
                         order_service.confirm_cancellation(updated_order)
                     messages.success(request, "Order updated successfully.")
@@ -215,11 +217,8 @@ def order_details(request, order_id):
 
 # ─── Sales Report ─────────────────────────────────────────────────────────────
 
-@login_required
+@admin_required
 def sales_report(request):
-    if not request.user.is_superuser:
-        return redirect('adminlog:admin_login')
-
     report_type = request.GET.get('report_type', '30days')
     start_date, end_date = report_service.get_date_range(
         report_type,

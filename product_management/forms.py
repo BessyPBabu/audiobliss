@@ -96,10 +96,28 @@ class ProductVariantForm(forms.ModelForm):
             raise forms.ValidationError("Max quantity per user must be at least 1.")
         return qty
 
+    
+    ALLOWED_IMAGE_TYPES = {'image/jpeg', 'image/png', 'image/webp'}
+
     def _clean_image(self, field_name):
         image = self.cleaned_data.get(field_name)
-        if image and hasattr(image, 'size') and image.size > 5 * 1024 * 1024:
+        if not image:
+            return image
+
+        if hasattr(image, 'size') and image.size > 5 * 1024 * 1024:
             raise forms.ValidationError("Image file too large (max 5MB).")
+
+        if getattr(image, 'content_type', None) not in self.ALLOWED_IMAGE_TYPES:
+            raise forms.ValidationError("Only JPEG, PNG or WEBP images are allowed.")
+
+        try:
+            from PIL import Image
+            image.seek(0)
+            Image.open(image).verify()
+            image.seek(0)
+        except Exception:
+            raise forms.ValidationError("Uploaded file is not a valid image.")
+
         return image
 
     def clean_image1(self):

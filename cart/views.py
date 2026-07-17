@@ -4,7 +4,6 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
-from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST, require_GET
 
 import services.cart_service as cart_service
@@ -30,21 +29,20 @@ def view_cart(request):
 @login_required
 @require_POST
 def add_to_cart(request):
-    product_variant_id = request.POST.get('product_variant_id', '').strip()
-
-    if not product_variant_id or not product_variant_id.isdigit():
-        return JsonResponse({'success': False, 'error': 'Invalid product variant.'}, status=400)
-
+    from .forms import AddToCartForm
     from product_management.models import ProductVariant
+
+    form = AddToCartForm(request.POST)
+    if not form.is_valid():
+        return JsonResponse({'success': False, 'error': 'Invalid product variant or quantity.'}, status=400)
+
+    product_variant_id = form.cleaned_data['product_variant_id']
+    quantity = form.cleaned_data['quantity']
+
     try:
-        variant = ProductVariant.objects.get(id=int(product_variant_id), is_active=True, deleted=False)
+        variant = ProductVariant.objects.get(id=product_variant_id, is_active=True, deleted=False)
     except ProductVariant.DoesNotExist:
         return JsonResponse({'success': False, 'error': 'Product variant not found.'}, status=404)
-
-    try:
-        quantity = int(request.POST.get('quantity', 1))
-    except ValueError:
-        return JsonResponse({'success': False, 'error': 'Invalid quantity.'}, status=400)
 
     try:
         cart_service.add_item(request.user, variant, quantity)
@@ -169,6 +167,7 @@ def cart_checkout(request):
                 cart_items=cart_items,
                 order_total=totals['final_total_with_service_charge'],
                 request_ip=request.META.get('REMOTE_ADDR', ''),
+                discount_amount=discount_amount,
             )
         except order_service.OrderError as e:
             messages.error(request, str(e))
@@ -214,7 +213,6 @@ def cart_checkout(request):
     })
 
 
-@csrf_exempt
 def payment_verify(request):
     if request.method != 'POST':
         return JsonResponse({'status': 'error', 'message': 'Invalid request method.'}, status=405)

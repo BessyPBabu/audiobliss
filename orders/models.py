@@ -52,9 +52,10 @@ class Order(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
+   # new
     @property
     def total_amount(self):
-        return self.order_total + self.tax - self.coupon_discount
+        return self.order_total + self.tax
 
     def can_be_cancelled(self):
         return self.status in ('New', 'Confirmed')

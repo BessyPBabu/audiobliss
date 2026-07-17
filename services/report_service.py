@@ -50,28 +50,36 @@ def calculate_metrics(orders):
     }
 
 
+
 def build_order_data(orders_page):
+    
     from orders.models import OrderProduct
     from coupon.models import CouponUsage
-    order_data = []
 
+    order_ids = [order.id for order in orders_page]
+
+    usages_by_order = {}
+    for usage in CouponUsage.objects.filter(order_id__in=order_ids).select_related('coupon'):
+        usages_by_order.setdefault(usage.order_id, []).append(usage)
+
+    items_by_order = {}
+    items_qs = OrderProduct.objects.filter(order_id__in=order_ids).select_related(
+        'product_variant__product', 'product_variant__color'
+    )
+    for item in items_qs:
+        items_by_order.setdefault(item.order_id, []).append(item)
+
+    order_data = []
     for order in orders_page:
-        usages = CouponUsage.objects.filter(order=order).select_related('coupon')
+        usages = usages_by_order.get(order.id, [])
         coupon_info = (
             ', '.join(f"{u.code} (₹{u.discount_amount})" for u in usages)
-            if usages.exists() else "No coupon applied"
-        )
-        items = OrderProduct.objects.filter(order=order).select_related(
-            'product_variant__product', 'product_variant__color'
-        )
-        item_details = '<br>'.join(
-            f"{i.product_variant.product.title} (x{i.quantity}) - ₹{i.product_price}"
-            for i in items
+            if usages else "No coupon applied"
         )
         order_data.append({
             'order': order,
             'coupon_info': coupon_info,
-            'item_details': item_details,
+            'items': items_by_order.get(order.id, []),
         })
 
     return order_data

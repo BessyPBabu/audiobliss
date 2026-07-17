@@ -33,9 +33,10 @@ def invoice(request, order_id):
         # Use price at order time, not current product price
         item.total_price = item.product_price * item.quantity
 
-    context = {'order': order, 'order_items': order_items}
+    is_pdf = request.GET.get('download') == 'pdf'
+    context = {'order': order, 'order_items': order_items, 'is_pdf': is_pdf}
 
-    if request.GET.get('download') == 'pdf':
+    if is_pdf:
         try:
             template = get_template('user_log/invoice.html')
             html = template.render(context)

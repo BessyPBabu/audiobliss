@@ -5,6 +5,133 @@
 {% block body %}
 {% load static %}
 
+<style>
+    .wishlist-page-title {
+        font-size: 24px;
+        font-weight: 700;
+        margin-bottom: 20px;
+        color: #2b2b2b;
+    }
+
+    .wishlist-table-card {
+        border: none;
+        border-radius: 16px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.06);
+        overflow: hidden;
+        background-color: #fff;
+        padding: 10px 20px 20px;
+    }
+
+    table#wishlist-table thead th {
+        background-color: transparent;
+        border: none;
+        border-bottom: 2px solid #f0f0f0;
+        color: #777;
+        text-transform: uppercase;
+        font-size: 12px;
+        font-weight: 700;
+        padding: 16px 12px;
+    }
+
+    table#wishlist-table tbody tr {
+        border-bottom: 1px solid #f5f5f5;
+    }
+
+    table#wishlist-table tbody tr:last-child {
+        border-bottom: none;
+    }
+
+    table#wishlist-table tbody tr td {
+        border: none;
+        vertical-align: middle;
+        padding: 18px 12px;
+    }
+
+    table#wishlist-table .product-thumbnail img {
+        border-radius: 8px;
+        width: 70px;
+        height: 70px;
+        object-fit: cover;
+    }
+
+    table#wishlist-table .product-name a {
+        color: #2b2b2b;
+        font-weight: 600;
+    }
+
+    .wishlist-add-btn {
+        background-color: #088178;
+        color: #fff;
+        border: none;
+        border-radius: 20px;
+        padding: 8px 18px;
+        font-size: 13px;
+        font-weight: 600;
+        text-decoration: none;
+        transition: background-color 0.2s ease;
+    }
+    .wishlist-add-btn:hover {
+        background-color: #066f66;
+        text-decoration: none;
+    }
+    .wishlist-add-btn:disabled {
+        background-color: #cccccc;
+        cursor: not-allowed;
+    }
+
+    .wishlist-remove-btn {
+        background-color: transparent;
+        border: 1px solid #e0e0e0;
+        border-radius: 50%;
+        width: 36px;
+        height: 36px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        color: #c62828;
+        text-decoration: none;
+        transition: background-color 0.2s ease;
+    }
+    .wishlist-remove-btn:hover {
+        background-color: #fdecea;
+        text-decoration: none;
+    }
+
+    .empty-state-box {
+        text-align: center;
+        padding: 60px 20px;
+        background-color: #fff;
+        border-radius: 16px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.05);
+    }
+    .empty-state-box i {
+        font-size: 48px;
+        color: #ccc;
+        margin-bottom: 15px;
+        display: block;
+    }
+    .empty-state-box p {
+        color: #777;
+        margin-bottom: 20px;
+        font-size: 15px;
+    }
+    .btn-browse {
+        background-color: #088178;
+        color: #fff;
+        border-radius: 30px;
+        padding: 10px 28px;
+        font-weight: 600;
+        text-decoration: none;
+        display: inline-block;
+        transition: background-color 0.2s ease;
+    }
+    .btn-browse:hover {
+        background-color: #066f66;
+        color: #fff;
+        text-decoration: none;
+    }
+</style>
+
 <div class="page-header breadcrumb-wrap">
     <div class="container">
         <div class="breadcrumb">
@@ -18,64 +145,71 @@
     <div class="container">
         <div class="row">
             <div class="col-12">
+                <h2 class="wishlist-page-title">My Wishlist</h2>
                 {% if wishlist_items %}
-                <div class="table-responsive">
-                    <table class="table shopping-summery text-center" id="wishlist-table">
-                        <thead>
-                            <tr class="main-heading">
-                                <th scope="col">Image</th>
-                                <th scope="col" colspan="2">Product</th>
-                                <th scope="col">Price</th>
-                                <th scope="col">Stock Status</th>
-                                <th scope="col">Add to Cart</th>
-                                <th scope="col">Remove</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for item in wishlist_items %}
-                            <tr>
-                                <td class="image product-thumbnail">
-                                    <img src="{{ item.product_variant.image1.url }}" alt="{{ item.product_variant.product.title }}">
-                                </td>
-                                <td class="product-des product-name">
-                                    <h5 class="product-name">
-                                        <a href="{% url 'userlog:product_details' item.product_variant.product.id %}">{{ item.product_variant.product.title }}</a>
-                                    </h5>
-                                    <p class="font-xs">{{ item.product_variant.product.title }}</p>
-                                </td>
-                                <td class="price" data-title="Price">
-                                    <span>&#8377;{{ item.product_variant.price }}</span>
-                                </td>
-                                <td class="text-center" data-title="Stock">
-                                    {% if item.product_variant.stock > 0 %}
-                                    <span class="color3 font-weight-bold">In Stock</span>
-                                    {% else %}
-                                    <span class="text-danger font-weight-bold">Out of Stock</span>
-                                    {% endif %}
-                                </td>
-                                <td class="text-right" data-title="Cart">
-                                    {% if item.product_variant.stock > 0 %}
-                                    <button class="btn btn-sm add-to-cart" data-product-variant-id="{{ item.product_variant.id }}">
-                                        <i class="fi-rs-shopping-bag mr-5"></i>Add to cart
-                                    </button>
-                                    {% else %}
-                                    <button class="btn btn-sm btn-secondary" disabled>
-                                        <i class="fi-rs-shopping-bag mr-5"></i>Out of Stock
-                                    </button>
-                                    {% endif %}
-                                </td>
-                                <td class="action" data-title="Remove">
-                                    <button class="btn btn-sm remove-from-wishlist" data-wishlist-item-id="{{ item.id }}">
-                                        <i class="fi-rs-trash"></i>
-                                    </button>
-                                </td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
+                <div class="wishlist-table-card">
+                    <div class="table-responsive">
+                        <table class="table mb-0" id="wishlist-table">
+                            <thead>
+                                <tr>
+                                    <th scope="col">Image</th>
+                                    <th scope="col">Product</th>
+                                    <th scope="col">Price</th>
+                                    <th scope="col">Stock Status</th>
+                                    <th scope="col">Add to Cart</th>
+                                    <th scope="col">Remove</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in wishlist_items %}
+                                <tr>
+                                    <td class="product-thumbnail">
+                                        <img src="{{ item.product_variant.image1.url }}" alt="{{ item.product_variant.product.title }}">
+                                    </td>
+                                    <td class="product-name">
+                                        <h5 class="mb-0">
+                                            <a href="{% url 'userlog:product_details' item.product_variant.product.id %}">{{ item.product_variant.product.title }}</a>
+                                        </h5>
+                                        <p class="font-xs text-muted mb-0">{{ item.product_variant.color.name }}</p>
+                                    </td>
+                                    <td data-title="Price">
+                                        <span>&#8377;{{ item.product_variant.price }}</span>
+                                    </td>
+                                    <td data-title="Stock">
+                                        {% if item.product_variant.stock > 0 %}
+                                        <span class="color3 font-weight-bold">In Stock</span>
+                                        {% else %}
+                                        <span class="text-danger font-weight-bold">Out of Stock</span>
+                                        {% endif %}
+                                    </td>
+                                    <td data-title="Cart">
+                                        {% if item.product_variant.stock > 0 %}
+                                        <button class="wishlist-add-btn add-to-cart" data-product-variant-id="{{ item.product_variant.id }}">
+                                            <i class="fi-rs-shopping-bag mr-5"></i>Add to cart
+                                        </button>
+                                        {% else %}
+                                        <button class="wishlist-add-btn" disabled>
+                                            <i class="fi-rs-shopping-bag mr-5"></i>Out of Stock
+                                        </button>
+                                        {% endif %}
+                                    </td>
+                                    <td data-title="Remove">
+                                        <button class="wishlist-remove-btn remove-from-wishlist" data-wishlist-item-id="{{ item.id }}">
+                                            <i class="fi-rs-trash"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
                 {% else %}
-                <p>Your wishlist is empty. <a href="{% url 'userlog:user_products' %}">Continue shopping</a>.</p>
+                <div class="empty-state-box">
+                    <i class="fi-rs-heart"></i>
+                    <p>Your wishlist is empty.</p>
+                    <a href="{% url 'userlog:user_products' %}" class="btn-browse">Continue Shopping</a>
+                </div>
                 {% endif %}
             </div>
         </div>
@@ -88,7 +222,6 @@
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script>
 $(document).ready(function() {
-    // Handle Add to Cart
     $(document).on('click', '.add-to-cart', function(e) {
         e.preventDefault();
         var productVariantId = $(this).data('product-variant-id');
@@ -105,20 +238,19 @@ $(document).ready(function() {
             dataType: 'json',
             success: function(response) {
                 if (response.success) {
-                    alert('Product added to cart successfully!');
+                    showToast('Product added to cart successfully!', 'success');
                     updateCounts();
                     button.prop('disabled', true).text('Added to Cart');
                 } else {
-                    alert(response.error || 'Error adding product to cart');
+                    showToast(response.error || 'Error adding product to cart', 'error');
                 }
             },
             error: function(xhr, errmsg, err) {
-                alert('An error occurred: ' + errmsg);
+                showToast('An error occurred: ' + errmsg, 'error');
             }
         });
     });
 
-    // Handle Remove from Wishlist
     $(document).on('click', '.remove-from-wishlist', function(e) {
         e.preventDefault();
         var wishlistItemId = $(this).data('wishlist-item-id');
@@ -137,19 +269,20 @@ $(document).ready(function() {
                 if (response.success) {
                     row.remove();
                     if (wishlistTable.find('tbody tr').length === 0) {
-                        wishlistTable.hide();
+                        $('.wishlist-table-card').replaceWith(
+                            '<div class="empty-state-box"><i class="fi-rs-heart"></i><p>Your wishlist is empty.</p><a href="{% url "userlog:user_products" %}" class="btn-browse">Continue Shopping</a></div>'
+                        );
                     }
                 } else {
-                    alert(response.message || 'Error removing item from wishlist');
+                    showToast(response.message || 'Error removing item from wishlist', 'error');
                 }
             },
             error: function(xhr, errmsg, err) {
-                alert('An error occurred: ' + errmsg);
+                showToast('An error occurred: ' + errmsg, 'error');
             }
         });
     });
 
-    // Function to update wishlist and cart counts
     function updateCounts() {
         $.ajax({
             url: '{% url "cart:count" %}',

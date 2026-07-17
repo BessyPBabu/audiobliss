@@ -1,10 +1,6 @@
 from django import forms
-from .models import CartItem
 
-class AddToCartForm(forms.ModelForm):
-    class Meta:
-        model = CartItem
-        fields = ['quantity']
-        widgets = {
-            'quantity': forms.NumberInput(attrs={'min': 1, 'value': 1}),
-        }
+
+class AddToCartForm(forms.Form):
+    product_variant_id = forms.IntegerField(min_value=1)
+    quantity = forms.IntegerField(min_value=1, max_value=100, initial=1)
